@@ -1,0 +1,3503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Поле Чудес — ТВ-шоу на телефоне</title>
+<meta name="description" content="Поле Чудес: угадай слово, крутите барабан, собирайте награды. Соло и мультиплеер по коду.">
+<meta name="theme-color" content="#0a0612">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23150a26' stroke='%23ffd75e' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%23241046' stroke='%23ffd75e' stroke-width='2'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Поле Чудес">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* ============================================================
+   ПОЛЕ ЧУДЕС — стили
+   ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  background:#08040f;color:#f7f2ff;overflow:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  touch-action:manipulation;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(62% 46% at 50% -8%, rgba(124,58,237,.50), transparent 68%),
+    radial-gradient(42% 30% at 96% 18%, rgba(236,72,153,.20), transparent 70%),
+    radial-gradient(52% 40% at 4% 92%, rgba(59,130,246,.14), transparent 70%),
+    linear-gradient(180deg,#0d0618 0%,#08040f 100%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.35;
+  background-image:radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px);
+  background-size:26px 26px;background-position:0 0;
+  mask-image:radial-gradient(circle at 50% 0%, #000 0%, transparent 62%);
+  -webkit-mask-image:radial-gradient(circle at 50% 0%, #000 0%, transparent 62%);
+}
+[hidden]{display:none!important}
+button{font-family:inherit}
+button:focus{outline:none}
+input{font-family:inherit}
+
+:root{
+  --gold:#ffd75e; --gold2:#ffb01f; --gold3:#ff8a00;
+  --violet:#8b5cf6; --pink:#ec4899; --green:#34d399; --red:#fb7185;
+  --text:#f7f2ff; --muted:#b9a9d9; --dim:#8d7bb8;
+  --panel:rgba(38,22,66,.72); --panel2:rgba(22,12,42,.92);
+  --line:rgba(255,215,94,.22); --line2:rgba(167,139,250,.24);
+  --radius:16px;
+}
+
+/* ---------- каркас ---------- */
+#app{position:relative;max-width:480px;margin:0 auto;height:100vh;height:100dvh;overflow:hidden}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.scroll::-webkit-scrollbar{width:0}
+
+/* ---------- общие элементы ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;height:48px;padding:0 2px}
+.tb-title{font-size:15px;font-weight:800;letter-spacing:.02em;text-align:center}
+.icon-btn{
+  width:40px;height:40px;flex:0 0 40px;border-radius:13px;border:1px solid var(--line2);
+  background:rgba(255,255,255,.05);color:var(--text);font-size:17px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.icon-btn:active{transform:scale(.92)}
+
+.btn{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;min-height:52px;padding:14px 16px;border:0;border-radius:16px;
+  font-weight:800;font-size:15.5px;letter-spacing:.01em;color:#fff;cursor:pointer;
+  background:rgba(255,255,255,.06);user-select:none;
+  transition:transform .12s ease, box-shadow .25s ease, filter .2s;
+  overflow:hidden;
+}
+.btn:active{transform:scale(.975)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn-gold{
+  background:linear-gradient(135deg,#ffe9a3 0%,#ffd75e 30%,#ffb01f 62%,#ff8a00 100%);
+  color:#2a1500;text-shadow:0 1px 0 rgba(255,255,255,.35);
+  box-shadow:0 12px 34px -10px rgba(255,176,31,.75), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.btn-gold::after{
+  content:"";position:absolute;top:-60%;bottom:-60%;width:34%;left:-50%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:rotate(18deg);animation:sheen 3.6s ease-in-out infinite;
+}
+@keyframes sheen{0%,55%{left:-60%}85%,100%{left:130%}}
+.btn-violet{
+  background:linear-gradient(135deg,#7c3aed,#a855f7 55%,#d946ef);
+  box-shadow:0 12px 34px -12px rgba(168,85,247,.8), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.btn-ghost{
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--text);font-weight:700;
+}
+.btn-ghost:active{background:rgba(255,255,255,.09)}
+.btn-big{min-height:56px;font-size:17px;border-radius:18px}
+.btn-sm{min-height:40px;font-size:13px;border-radius:12px;padding:9px 12px}
+.btn-danger{background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.35);color:#fecdd3;font-weight:700}
+.bi{font-size:19px;line-height:1}
+.tag{
+  font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.18);
+  padding:3px 7px;border-radius:999px;color:inherit;
+}
+.link{background:none;border:0;color:var(--gold);font-size:12px;font-weight:800;cursor:pointer;padding:2px 0}
+.link:active{opacity:.7}
+
+/* ---------- ГЛАВНАЯ ---------- */
+#scr-home{justify-content:flex-start;padding:calc(10px + env(safe-area-inset-top)) 18px calc(14px + env(safe-area-inset-bottom))}
+.home-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto}
+.profile-chip{
+  display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid var(--line2);color:var(--text);cursor:pointer;
+}
+.profile-chip:active{transform:scale(.97)}
+.avatar{
+  width:30px;height:30px;border-radius:50%;flex:0 0 30px;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#241200;
+  background:linear-gradient(135deg,#ffe08a,#ffb01f);
+}
+.avatar.big{width:64px;height:64px;flex:0 0 64px;font-size:26px;box-shadow:0 0 26px rgba(255,176,31,.35)}
+.pc-name{font-size:13px;font-weight:800;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.home-hero{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1 1 auto;min-height:0;padding:6px 0}
+.logo-wheel{
+  width:128px;height:128px;border-radius:50%;position:relative;flex:0 0 auto;
+  background:conic-gradient(from -90deg,
+    #7c3aed 0deg 20deg,#db2777 20deg 40deg,#2563eb 40deg 60deg,#0891b2 60deg 80deg,
+    #7c3aed 80deg 100deg,#f59e0b 100deg 120deg,#db2777 120deg 140deg,#2563eb 140deg 160deg,
+    #dc2626 160deg 180deg,#db2777 180deg 200deg,#7c3aed 200deg 220deg,#475569 220deg 240deg,
+    #0891b2 240deg 260deg,#2563eb 260deg 280deg,#db2777 280deg 300deg,#111827 300deg 320deg,
+    #7c3aed 320deg 340deg,#f59e0b 340deg 360deg);
+  animation:spin 22s linear infinite;
+  box-shadow:0 0 0 4px rgba(255,215,94,.95), 0 0 0 12px rgba(255,215,94,.10), 0 0 70px rgba(139,92,246,.55);
+}
+.logo-wheel::after{
+  content:"";position:absolute;inset:8px;border-radius:50%;
+  background:radial-gradient(circle at 50% 42%,#2a1650,#120823 72%);
+  border:2px solid rgba(255,215,94,.85);
+}
+.logo-hub{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;
+  width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 34% 28%,#5a2f9d,#1a0b30);border:2px solid var(--gold);
+  color:var(--gold);font-size:18px;box-shadow:0 0 18px rgba(255,176,31,.5);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo-title{
+  margin:18px 0 0;text-align:center;line-height:.84;letter-spacing:-.015em;
+  background:linear-gradient(180deg,#fff8dc 0%,#ffd75e 42%,#ff9f1c 78%,#ff7a00 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 8px 26px rgba(255,176,31,.32));
+}
+.logo-title .l1{display:block;font-size:34px;font-weight:900;letter-spacing:.26em;padding-left:.26em}
+.logo-title .l2{display:block;font-size:66px;font-weight:900;letter-spacing:.02em}
+.logo-sub{margin:14px 0 0;font-size:13px;line-height:1.45;color:var(--muted);text-align:center;font-weight:600}
+.home-menu{display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
+.home-row{display:flex;gap:10px}
+.home-row .btn{min-height:48px;font-size:13.5px}
+.home-foot{text-align:center;font-size:10.5px;color:var(--dim);margin-top:12px;font-weight:600;flex:0 0 auto}
+
+/* ---------- ИГРА ---------- */
+#scr-game{padding:0 12px calc(8px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}
+.round-label{font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:center}
+.cat-strip{display:flex;justify-content:center;flex:0 0 auto;padding:1px 0 6px}
+.cat-pill{
+  font-size:12.5px;font-weight:800;color:var(--gold);
+  background:rgba(255,215,94,.10);border:1px solid rgba(255,215,94,.28);
+  padding:5px 13px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+.host-line{
+  flex:0 0 auto;min-height:30px;font-size:12px;color:#eadfff;line-height:1.28;
+  background:rgba(139,92,246,.10);border-left:3px solid var(--violet);
+  border-radius:0 11px 11px 0;padding:6px 10px;margin-bottom:7px;
+}
+.board{display:flex;flex-direction:column;gap:5px;align-items:center;flex:0 0 auto;padding:1px 0 8px;width:100%}
+.board-row{display:flex;gap:5px;justify-content:center;width:100%}
+.cell{
+  position:relative;flex:1 1 0;max-width:62px;min-width:0;height:84px;border-radius:9px;
+  background:linear-gradient(180deg,rgba(64,36,112,.92),rgba(27,14,50,.96));
+  border:1px solid rgba(167,139,250,.26);
+  display:flex;align-items:center;justify-content:center;perspective:400px;overflow:hidden;
+}
+.cell-dot{color:rgba(255,215,94,.32);font-size:13px;transition:opacity .2s}
+.cell-letter{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:clamp(15px,4.4vw,25px);color:#2a1500;
+  background:linear-gradient(180deg,#fff3c4,#ffd75e 55%,#ffae1a);
+  transform:rotateY(90deg);opacity:0;
+  transition:transform .5s cubic-bezier(.2,.9,.3,1),opacity .35s;
+}
+.cell.open{border-color:rgba(255,215,94,.6);box-shadow:0 0 16px rgba(255,176,31,.28)}
+.cell.open .cell-letter{transform:rotateY(0);opacity:1}
+.cell.open .cell-dot{opacity:0}
+.board-gap{flex:0 0 9px}
+.players{display:flex;gap:6px;overflow-x:auto;padding:0 0 7px;flex:0 0 auto;scrollbar-width:none}
+.players::-webkit-scrollbar{display:none}
+.pchip{
+  flex:1 0 auto;min-width:86px;padding:5px 9px;border-radius:12px;
+  background:rgba(255,255,255,.045);border:1px solid rgba(167,139,250,.18);
+  text-align:center;transition:.25s;
+}
+.pchip.active{border-color:rgba(255,215,94,.75);background:rgba(255,215,94,.11);box-shadow:0 0 18px rgba(255,176,31,.22)}
+.pchip .pn{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e6dbff}
+.pchip .ps{font-size:14.5px;font-weight:900;color:var(--gold);line-height:1.15}
+.pchip .pr{font-size:9px;color:var(--muted);white-space:nowrap}
+
+.timer{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;flex:0 0 auto;margin-bottom:6px}
+.timer i{display:block;height:100%;width:100%;border-radius:3px;background:linear-gradient(90deg,#34d399,#ffd75e 60%,#fb7185);transition:width .2s linear}
+.timer.danger i{background:linear-gradient(90deg,#fb7185,#ef4444)}
+
+.play-row{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-height:0;padding:10px 0 0}
+.wheel-wrap{position:relative;width:156px;height:156px;flex:0 0 156px;margin:0 auto;z-index:0}
+.wheel-wrap::before{
+  content:"";position:absolute;inset:-26px;border-radius:50%;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,rgba(139,92,246,.38) 0%,rgba(236,72,153,.12) 45%,transparent 72%);
+  filter:blur(2px);
+}
+#wheel{width:156px;height:156px;display:block;border-radius:50%;filter:drop-shadow(0 10px 26px rgba(0,0,0,.65));will-change:transform}
+.wheel-pointer{
+  position:absolute;top:-5px;left:50%;transform:translateX(-50%);z-index:3;
+  width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;
+  border-top:15px solid var(--gold);filter:drop-shadow(0 2px 4px #000);
+}
+.wheel-hub{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 34% 28%,#5a2f9d,#1a0b30);border:2px solid var(--gold);
+  color:var(--gold);font-size:15px;box-shadow:0 0 16px rgba(255,176,31,.45);
+}
+.play-side{flex:1 1 auto;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hint{font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.25;min-height:15px}
+.hint b{color:var(--gold)}
+.btn-spin{min-height:48px;font-size:17px;letter-spacing:.1em;animation:pulse 1.9s ease-in-out infinite}
+@keyframes pulse{
+  0%,100%{box-shadow:0 12px 34px -10px rgba(255,176,31,.75),0 0 0 0 rgba(255,215,94,.35)}
+  50%{box-shadow:0 12px 38px -6px rgba(255,176,31,.9),0 0 0 11px rgba(255,215,94,0)}
+}
+.spin-wait{
+  min-height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:var(--muted);background:rgba(255,255,255,.04);
+  border:1px dashed rgba(167,139,250,.25);text-align:center;padding:6px 10px;
+}
+.choose-row{display:flex;flex-direction:column;gap:6px}
+.choose-row .btn{min-height:43px;font-size:13.5px;border-radius:13px}
+
+.final-stage{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:4px 0 8px}
+.fs-label{font-size:10px;font-weight:900;letter-spacing:.26em;color:var(--muted)}
+.fs-value{font-size:44px;font-weight:900;color:var(--gold);line-height:1.02;text-shadow:0 0 30px rgba(255,176,31,.5)}
+.fs-sub{font-size:11px;color:var(--muted);font-weight:700}
+.fs-hint{font-size:13px;color:#e9dcff;font-weight:800;margin-top:8px;line-height:1.3}
+.final-panel{
+  flex:0 0 auto;display:flex;gap:6px;justify-content:center;padding:0 0 7px;flex-wrap:wrap;
+}
+.fp-item{
+  font-size:10.5px;font-weight:800;color:var(--muted);background:rgba(255,255,255,.05);
+  border:1px solid rgba(167,139,250,.18);border-radius:999px;padding:4px 9px;white-space:nowrap;
+}
+.fp-item b{color:var(--gold)}
+.fp-item.danger{border-color:rgba(251,113,133,.4);color:#fecdd3}
+.fp-item.danger b{color:var(--red)}
+
+/* сцена без клавиатуры: колесо крупнее, кнопки под ним */
+#scr-game:not(.kbd-open) .play-row{flex-direction:column;justify-content:center;gap:12px}
+#scr-game:not(.kbd-open) .wheel-wrap{width:172px;height:172px;flex-basis:172px}
+#scr-game:not(.kbd-open) #wheel{width:172px;height:172px}
+#scr-game:not(.kbd-open) .play-side{width:100%;align-items:center;gap:8px}
+#scr-game:not(.kbd-open) .hint{font-size:13px}
+#scr-game:not(.kbd-open) .btn-spin{max-width:280px;min-height:52px;font-size:18px}
+#scr-game:not(.kbd-open) .choose-row{width:100%;max-width:300px}
+#scr-game:not(.kbd-open) .spin-wait{max-width:300px}
+.kbd{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;flex:0 0 auto;padding:2px 0 0}
+.key{
+  aspect-ratio:1/1.12;border-radius:8px;border:1px solid rgba(167,139,250,.26);
+  background:linear-gradient(180deg,rgba(72,42,124,.78),rgba(34,19,60,.92));
+  color:#f3ecff;font-weight:800;font-size:13px;line-height:1;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.12s;padding:0;
+}
+.key:active{transform:scale(.9)}
+.key.used{opacity:.28;background:rgba(255,255,255,.04)}
+.key.hit{border-color:#34d399;background:rgba(52,211,153,.18);color:#a7f3d0;opacity:1}
+.key.miss{border-color:#fb7185;background:rgba(251,113,133,.14);color:#fecdd3;opacity:1;text-decoration:line-through}
+.key:disabled{cursor:default}
+.kbd.locked{opacity:.3;pointer-events:none;filter:saturate(.4)}
+
+/* ---------- ЛОББИ ---------- */
+#scr-lobby{padding:0 16px calc(16px + env(safe-area-inset-bottom))}
+.lobby-body{display:flex;flex-direction:column;gap:14px;padding-top:6px;overflow-y:auto;flex:1 1 auto}
+.lobby-intro{font-size:12.5px;line-height:1.5;color:var(--muted);text-align:center;padding:0 8px}
+.card{
+  background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:15px;
+}
+.card-title{font-size:14px;font-weight:900;margin-bottom:10px;letter-spacing:.01em}
+.or{text-align:center;font-size:11px;font-weight:800;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.join-row{display:flex;gap:8px}
+.code-input{
+  flex:1 1 auto;min-width:0;min-height:48px;border-radius:13px;border:1px solid rgba(167,139,250,.3);
+  background:rgba(0,0,0,.28);color:var(--gold);font-size:22px;font-weight:900;letter-spacing:.28em;
+  text-align:center;text-transform:uppercase;padding:0 10px;outline:none;
+}
+.code-input::placeholder{color:rgba(255,215,94,.22);letter-spacing:.28em}
+.join-row .btn{flex:0 0 auto;width:auto;min-height:48px;padding:0 18px}
+.mp-note{font-size:11px;line-height:1.45;color:var(--dim);text-align:center;padding:2px 10px}
+.mp-note b{color:var(--gold)}
+.room-code-box{text-align:center;padding:16px 10px 14px}
+.rc-label{font-size:10px;font-weight:900;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.rc-code{
+  font-size:46px;font-weight:900;letter-spacing:.18em;color:var(--gold);line-height:1.1;margin:6px 0 10px;
+  text-shadow:0 0 26px rgba(255,176,31,.45);
+}
+.players-list{display:flex;flex-direction:column;gap:7px}
+.pl-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:13px;background:rgba(255,255,255,.045);border:1px solid rgba(167,139,250,.16)}
+.pl-row .av{width:34px;height:34px;border-radius:50%;flex:0 0 34px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#241200;background:linear-gradient(135deg,#ffe08a,#ffb01f)}
+.pl-row .nm{font-size:13.5px;font-weight:800;flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-row .hl{font-size:10px;font-weight:900;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+.lobby-actions{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+
+/* ---------- ШКАФ НАГРАД ---------- */
+#scr-awards{padding:0 14px calc(16px + env(safe-area-inset-bottom))}
+.awards-head{flex:0 0 auto;padding:2px 2px 10px}
+.awards-title{font-size:24px;font-weight:900;letter-spacing:.02em;
+  background:linear-gradient(180deg,#fff6d0,#ffd75e 55%,#ffae1a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.awards-sub{font-size:11.5px;color:var(--muted);margin-top:3px;font-weight:600}
+.progress{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#8b5cf6,#ffd75e 70%,#ffb01f);transition:width .5s}
+.award-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.award{
+  position:relative;border-radius:15px;padding:13px 5px 10px;text-align:center;cursor:pointer;
+  background:rgba(255,255,255,.045);border:1px solid rgba(167,139,250,.18);transition:.18s;
+}
+.award:active{transform:scale(.96)}
+.award .ai{font-size:29px;line-height:1;filter:grayscale(1);opacity:.38;transition:.3s}
+.award .an{font-size:10px;font-weight:800;margin-top:7px;line-height:1.18;color:#b7a7d8}
+.award .lock{position:absolute;top:5px;right:6px;font-size:10px;opacity:.6}
+.award.unlocked{background:linear-gradient(180deg,rgba(255,215,94,.17),rgba(255,159,28,.04));border-color:rgba(255,215,94,.55);box-shadow:0 0 20px rgba(255,176,31,.14)}
+.award.unlocked .ai{filter:none;opacity:1;filter:drop-shadow(0 0 8px rgba(255,215,94,.5))}
+.award.unlocked .an{color:#ffe9a8}
+.award.new::before{
+  content:"NEW";position:absolute;top:5px;left:5px;font-size:7.5px;font-weight:900;letter-spacing:.08em;
+  background:var(--pink);color:#fff;border-radius:4px;padding:2px 4px;
+}
+.figures-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.fig{
+  display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:11px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(167,139,250,.18);font-size:11px;font-weight:700;color:#d9ccf5;
+}
+.fig .fe{font-size:18px}
+.fig.empty{color:var(--dim);font-weight:600;font-size:11px}
+
+/* ---------- ПРАВИЛА / ПРОФИЛЬ ---------- */
+#scr-rules,#scr-profile{padding:0 16px calc(16px + env(safe-area-inset-bottom))}
+.rules-body{overflow-y:auto;flex:1 1 auto;padding-top:4px}
+.rule-block{background:rgba(255,255,255,.045);border:1px solid rgba(167,139,250,.16);border-radius:16px;padding:13px 15px;margin-bottom:10px}
+.rule-block h3{margin:0 0 7px;font-size:13.5px;font-weight:900;color:var(--gold)}
+.rule-block p{margin:0;font-size:12.5px;line-height:1.55;color:#ded2f7}
+.rule-block b{color:#fff}
+.profile-head{display:flex;align-items:center;gap:13px;padding:8px 2px 16px}
+.pr-name{font-size:20px;font-weight:900}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.stat{background:rgba(255,255,255,.05);border:1px solid rgba(167,139,250,.16);border-radius:14px;padding:11px 13px}
+.stat b{display:block;font-size:23px;font-weight:900;color:var(--gold);line-height:1.1}
+.stat span{font-size:10.5px;color:var(--muted);font-weight:600}
+.section-label{font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+
+/* ---------- оверлеи и модалки ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,3,12,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  padding:18px;animation:fade .2s ease;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:410px;border-radius:26px;padding:22px 18px 18px;text-align:center;
+  background:linear-gradient(180deg,rgba(42,24,74,.99),rgba(17,8,33,.995));
+  border:1px solid rgba(255,215,94,.26);box-shadow:0 34px 90px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.08);
+  animation:pop .32s cubic-bezier(.2,.9,.3,1.15);
+}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.sheet-emoji{font-size:52px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 6px 18px rgba(255,176,31,.4))}
+.sheet h2{margin:0 0 6px;font-size:22px;font-weight:900;line-height:1.15;
+  background:linear-gradient(180deg,#fff6d0,#ffd75e 60%,#ffae1a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet p{margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--muted)}
+.sheet .word-big{
+  font-size:clamp(22px,7vw,34px);font-weight:900;letter-spacing:.14em;color:#fff;
+  margin:4px 0 12px;word-break:break-word;
+}
+.sheet .pts{font-size:34px;font-weight:900;color:var(--gold);margin:2px 0 4px;text-shadow:0 0 24px rgba(255,176,31,.4)}
+.sheet .row{display:flex;gap:8px;margin-top:10px}
+.sheet .row .btn{flex:1 1 0}
+.sheet .mini{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.45}
+.statline{display:flex;justify-content:center;gap:18px;margin:12px 0 16px}
+.statline div{flex:1 1 0}
+.statline b{display:block;font-size:19px;color:var(--gold);font-weight:900;white-space:nowrap}
+.statline span{font-size:10px;color:var(--muted);font-weight:700}
+.awards-earned{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0 12px}
+.awards-earned .ae{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#ffe9a8;
+  background:rgba(255,215,94,.12);border:1px solid rgba(255,215,94,.3);border-radius:999px;padding:4px 9px}
+
+.modal-backdrop{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,3,12,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:18px;
+  animation:fade .18s ease;
+}
+.modal{
+  width:100%;max-width:380px;border-radius:22px;padding:20px 16px 16px;
+  background:linear-gradient(180deg,rgba(44,26,78,.99),rgba(18,9,35,.995));
+  border:1px solid rgba(255,215,94,.24);box-shadow:0 30px 70px rgba(0,0,0,.7);
+  animation:pop .28s cubic-bezier(.2,.9,.3,1.1);
+}
+.modal h3{margin:0 0 4px;font-size:18px;font-weight:900;text-align:center}
+.modal .msub{font-size:11.5px;color:var(--muted);text-align:center;margin:0 0 14px;line-height:1.45}
+.word-input{
+  width:100%;min-height:54px;border-radius:14px;border:1px solid rgba(255,215,94,.35);
+  background:rgba(0,0,0,.32);color:#fff;font-size:24px;font-weight:900;letter-spacing:.12em;
+  text-align:center;text-transform:uppercase;outline:none;padding:0 12px;
+}
+.word-input::placeholder{color:rgba(255,255,255,.22);letter-spacing:.12em;font-size:16px}
+.modal .mrow{display:flex;gap:8px;margin-top:12px}
+.modal .mrow .btn{flex:1 1 0;min-height:46px;font-size:14px}
+.prize-card{text-align:center;padding:4px 0 2px}
+.prize-emoji{font-size:64px;line-height:1;margin:6px 0 10px;animation:bounce .7s cubic-bezier(.2,.9,.3,1.3) infinite alternate}
+@keyframes bounce{to{transform:translateY(-7px) scale(1.05)}}
+.prize-title{font-size:20px;font-weight:900;margin-bottom:4px}
+.prize-text{font-size:13px;color:var(--muted);line-height:1.5}
+.toast{
+  position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,18px);
+  background:rgba(26,13,48,.97);border:1px solid rgba(255,215,94,.32);color:#fff;
+  padding:10px 16px;border-radius:13px;font-size:12.5px;font-weight:700;z-index:95;
+  opacity:0;pointer-events:none;transition:.25s;max-width:88vw;text-align:center;
+  box-shadow:0 14px 40px rgba(0,0,0,.6);
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+#confetti{position:fixed;inset:0;z-index:80;pointer-events:none;display:none}
+
+/* ---------- адаптив ---------- */
+@media (max-width:370px){
+  .logo-title .l2{font-size:58px}
+  .logo-wheel{width:112px;height:112px}
+  .home-row .btn{font-size:12px}
+  .wheel-wrap{width:134px;height:134px;flex-basis:134px}
+  #wheel{width:134px;height:134px}
+  .cell{border-radius:7px}
+  .btn{min-height:48px;font-size:14.5px}
+}
+@media (max-height:700px){
+  .logo-wheel{width:104px;height:104px}
+  .logo-title{margin-top:12px}
+  .logo-title .l1{font-size:28px}
+  .logo-title .l2{font-size:54px}
+  .logo-sub{margin-top:9px;font-size:12px}
+  .home-menu{gap:8px}
+  .btn-big{min-height:50px;font-size:15.5px}
+  .home-foot{margin-top:8px}
+  .host-line{min-height:26px;padding:4px 8px}
+  .board{padding-bottom:5px}
+  .players{padding-bottom:5px}
+}
+@media (min-width:600px){
+  body{background:#05030a}
+  #app{box-shadow:0 0 120px rgba(124,58,237,.25)}
+}
+</style>
+</head>
+<body>
+<noscript><div style="padding:30px;text-align:center;font-family:sans-serif">Для игры нужен JavaScript.</div></noscript>
+
+<div id="app">
+
+  <!-- ================= ГЛАВНАЯ ================= -->
+  <section class="screen active" id="scr-home">
+    <div class="home-top">
+      <button class="profile-chip" onclick="go('profile')">
+        <span class="avatar" id="homeAvatar">Г</span>
+        <span class="pc-name" id="homeName">Гость</span>
+      </button>
+      <button class="icon-btn" id="homeSound" onclick="toggleSound()" aria-label="Звук">🔊</button>
+    </div>
+
+    <div class="home-hero">
+      <div class="logo-wheel"><div class="logo-hub">◆</div></div>
+      <h1 class="logo-title"><span class="l1">ПОЛЕ</span><span class="l2">ЧУДЕС</span></h1>
+      <p class="logo-sub">Угадай слово. Крути барабан.<br>Собери все награды.</p>
+    </div>
+
+    <div class="home-menu">
+      <button class="btn btn-gold btn-big" onclick="startSolo()"><span class="bi">🎡</span> Играть соло</button>
+      <button class="btn btn-violet btn-big" onclick="openLobby()"><span class="bi">👥</span> Комната друзей <span class="tag">код</span></button>
+      <div class="home-row">
+        <button class="btn btn-ghost" onclick="go('awards')"><span class="bi">🏆</span> Награды <span class="tag" id="homeAwards">0/12</span></button>
+        <button class="btn btn-ghost" onclick="go('rules')"><span class="bi">📖</span> Правила</button>
+      </div>
+    </div>
+    <div class="home-foot">Виртуальные очки и награды · без реальных денег</div>
+  </section>
+
+  <!-- ================= ИГРА ================= -->
+  <section class="screen" id="scr-game">
+    <div class="topbar">
+      <button class="icon-btn" onclick="confirmExit()" aria-label="Меню">←</button>
+      <div class="round-label" id="gRound">Раунд 1</div>
+      <button class="icon-btn" id="gameSound" onclick="toggleSound()" aria-label="Звук">🔊</button>
+    </div>
+
+    <div class="cat-strip"><div class="cat-pill" id="gCat">—</div></div>
+    <div class="host-line" id="gHost">Ведущий: начнём!</div>
+
+    <div class="board" id="gBoard"></div>
+    <div class="players" id="gPlayers"></div>
+    <div class="timer" id="gTimerWrap" hidden><i id="gTimerBar"></i></div>
+
+    <div class="play-row">
+      <div class="wheel-wrap" id="wheelWrap">
+        <div class="wheel-pointer"></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+        <div class="wheel-hub">◆</div>
+      </div>
+      <div class="play-side" id="gSide">
+        <div class="hint" id="gHint"></div>
+        <button class="btn btn-gold btn-spin" id="btnSpin" onclick="doSpin()">КРУТИТЬ</button>
+        <div class="spin-wait" id="gSpinWait" hidden>Ход ведущего…</div>
+        <div class="choose-row" id="gChoose" hidden>
+          <button class="btn btn-gold" onclick="doContinue()">🎡 Крутить снова</button>
+          <button class="btn btn-violet" onclick="openGuess()">💡 Открыть слово</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btnReopen" onclick="openGuess()" hidden>Открыть слово</button>
+      </div>
+      <div class="final-stage" id="gFinalStage" hidden>
+        <div class="fs-label">ДЖЕКПОТ ×5</div>
+        <div class="fs-value" id="fsValue">2 000</div>
+        <div class="fs-sub">за финальное слово целиком</div>
+        <div class="fs-hint" id="fsHint">Выберите 3 согласные и 1 гласную</div>
+      </div>
+    </div>
+
+    <div class="final-panel" id="gFinalPanel" hidden>
+      <span class="fp-item" id="fpCons">Согласные <b>0/3</b></span>
+      <span class="fp-item" id="fpVow">Гласные <b>0/1</b></span>
+      <span class="fp-item" id="fpErr">Ошибки <b>0/3</b></span>
+    </div>
+
+    <div class="kbd" id="gKbd"></div>
+  </section>
+
+  <!-- ================= ЛОББИ ================= -->
+  <section class="screen" id="scr-lobby">
+    <div class="topbar">
+      <button class="icon-btn" onclick="leaveLobby()" aria-label="Назад">←</button>
+      <div class="tb-title">Комната друзей</div>
+      <span style="width:40px"></span>
+    </div>
+
+    <div class="lobby-body" id="lobbyHome">
+      <div class="lobby-intro">Сыграйте с друзьями по коду. 2–4 игрока, ходы по очереди, 20 секунд на ход. Победитель — тот, кто наберёт больше очков за матч.</div>
+
+      <div class="card">
+        <div class="card-title">Новая комната</div>
+        <button class="btn btn-gold" id="btnCreate" onclick="createRoom()">Создать комнату</button>
+      </div>
+
+      <div class="or">или</div>
+
+      <div class="card">
+        <div class="card-title">Войти по коду</div>
+        <div class="join-row">
+          <input id="joinCode" class="code-input" maxlength="4" placeholder="ABCD" autocomplete="off" spellcheck="false" inputmode="text">
+          <button class="btn btn-violet" onclick="joinRoomByCode()">Войти</button>
+        </div>
+      </div>
+
+      <div class="mp-note" id="mpNote">Мультиплеер работает через Firebase (бесплатный тариф). Если он не настроен — соло-режим доступен всегда.</div>
+    </div>
+
+    <div class="lobby-body" id="lobbyRoom" hidden>
+      <div class="card room-code-box">
+        <div class="rc-label">Код комнаты</div>
+        <div class="rc-code" id="roomCode">— — — —</div>
+        <button class="btn btn-ghost btn-sm" onclick="copyCode()">Копировать код</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Игроки <span id="lobbyCount" style="color:var(--gold)">1</span>/4</div>
+        <div class="players-list" id="lobbyPlayers"></div>
+      </div>
+
+      <div class="lobby-actions">
+        <button class="btn btn-gold btn-big" id="btnStart" onclick="startGame()">Начать игру</button>
+        <button class="btn btn-ghost" onclick="leaveRoom()">Выйти из комнаты</button>
+      </div>
+      <div class="mp-note" id="lobbyHint">Отправьте код друзьям. Начать игру может только хост.</div>
+    </div>
+  </section>
+
+  <!-- ================= ШКАФ НАГРАД ================= -->
+  <section class="screen" id="scr-awards">
+    <div class="topbar">
+      <button class="icon-btn" onclick="go('home')" aria-label="Назад">←</button>
+      <div class="tb-title">Достижения</div>
+      <button class="icon-btn" onclick="go('profile')" aria-label="Профиль">👤</button>
+    </div>
+    <div class="scroll">
+      <div class="awards-head">
+        <div class="awards-title">ШКАФ НАГРАД</div>
+        <div class="awards-sub">12 виртуальных наград за матчи, буквы и удачу</div>
+        <div class="progress"><i id="awardsBar" style="width:0%"></i></div>
+        <div class="awards-sub" id="awardsProgress" style="margin-top:6px">Открыто 0 из 12</div>
+      </div>
+      <div class="award-grid" id="awardsGrid"></div>
+      <div class="section-label">Полка фигурок</div>
+      <div class="figures-row" id="figures"></div>
+      <div style="height:14px"></div>
+    </div>
+  </section>
+
+  <!-- ================= ПРАВИЛА ================= -->
+  <section class="screen" id="scr-rules">
+    <div class="topbar">
+      <button class="icon-btn" onclick="go('home')" aria-label="Назад">←</button>
+      <div class="tb-title">Правила</div>
+      <span style="width:40px"></span>
+    </div>
+    <div class="rules-body scroll">
+      <div class="rule-block">
+        <h3>🎡 Как играть</h3>
+        <p>Три раунда и финал. Крутите колесо и называйте букву. Буква есть — открываются все такие буквы, а вы получаете очки: <b>сектор × число букв × 10</b>.</p>
+      </div>
+      <div class="rule-block">
+        <h3>💡 Открыть слово</h3>
+        <p>После верной буквы можно <b>крутить снова</b> или <b>открыть слово целиком</b>. Угадаете — бонус <b>+300</b> и раунд ваш. Ошибётесь — ход перейдёт.</p>
+      </div>
+      <div class="rule-block">
+        <h3>💸 Сектора</h3>
+        <p><b>×1, ×2, ×5, ×10</b> — множители очков. <b>ПРИЗ</b> — конверт с очками или фигуркой. <b>БАНКРОТ</b> — сгорают очки этого раунда. <b>ПРОПУСК</b> — ход переходит.</p>
+      </div>
+      <div class="rule-block">
+        <h3>👑 Финал</h3>
+        <p>Слово без колеса. Назовите <b>3 согласные и 1 гласную</b> — они откроются и дадут очки (×2). Потом назовите слово целиком: <b>джекпот ×5</b>. Три ошибки — финал проигран.</p>
+      </div>
+      <div class="rule-block">
+        <h3>🏆 Награды</h3>
+        <p>За матчи, буквы, рекорды и удачу открываются 12 наград в шкафу. Всё виртуальное: очки, титулы и фигурки. <b>Никаких реальных денег и ставок.</b></p>
+      </div>
+      <div class="rule-block">
+        <h3>👥 Комната друзей</h3>
+        <p>2–4 игрока, код из 4 символов. Ход по кругу, на ход — 20 секунд. Победитель матча — самый результативный. Понадобится Firebase (бесплатный тариф Spark).</p>
+      </div>
+      <div class="rule-block">
+        <h3>🎵 Звук</h3>
+        <p>Все звуки синтезируются WebAudio — без внешних файлов. Отключить/включить можно кнопкой 🔊.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ПРОФИЛЬ ================= -->
+  <section class="screen" id="scr-profile">
+    <div class="topbar">
+      <button class="icon-btn" onclick="go('home')" aria-label="Назад">←</button>
+      <div class="tb-title">Профиль</div>
+      <span style="width:40px"></span>
+    </div>
+    <div class="scroll" style="flex:1 1 auto">
+      <div class="profile-head">
+        <div class="avatar big" id="prAvatar">Г</div>
+        <div style="min-width:0">
+          <div class="pr-name" id="prName">Гость</div>
+          <button class="link" onclick="editName()">Изменить имя</button>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><b id="prMatches">0</b><span>матчей</span></div>
+        <div class="stat"><b id="prWins">0</b><span>побед</span></div>
+        <div class="stat"><b id="prBest">0</b><span>лучший счёт</span></div>
+        <div class="stat"><b id="prLetters">0</b><span>угадано букв</span></div>
+      </div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-title">Награды <span id="prAwardsCount" style="color:var(--gold)">0</span>/12</div>
+        <div class="awards-earned" id="prAwards"></div>
+      </div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-title">Полка фигурок</div>
+        <div class="figures-row" id="figuresProfile"></div>
+      </div>
+      <button class="btn btn-danger" onclick="resetProgress()">Сбросить прогресс</button>
+      <div class="mp-note" style="margin-top:12px">Профиль хранится на устройстве. При мультиплеере рекорд и награды синхронизируются с Firebase.</div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= ОВЕРЛЕИ ================= -->
+<div class="overlay" id="ovRound" hidden>
+  <div class="sheet">
+    <div class="sheet-emoji" id="orEmoji">🎉</div>
+    <h2 id="orTitle">Раунд 1</h2>
+    <p id="orCat">Категория</p>
+    <div class="word-big" id="orWord">СЛОВО</div>
+    <div class="pts" id="orPoints">+0</div>
+    <p id="orWinner" style="margin-bottom:6px">Победитель — Вы!</p>
+    <div class="row"><button class="btn btn-gold" id="orBtn">Следующий раунд</button></div>
+    <div class="mini" id="orHint"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovMatch" hidden>
+  <div class="sheet">
+    <div class="sheet-emoji" id="omEmoji">🏆</div>
+    <h2 id="omTitle">Победа!</h2>
+    <div class="word-big" id="omWord" style="letter-spacing:.08em"></div>
+    <div class="pts" id="omScore">0</div>
+    <div class="statline" id="omStats"></div>
+    <div class="awards-earned" id="omAwards"></div>
+    <div class="row"><button class="btn btn-gold" id="omBtn">В меню</button></div>
+    <div class="mini" id="omHint"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovAward" hidden>
+  <div class="sheet">
+    <div class="sheet-emoji" id="awEmoji" style="font-size:76px">🏆</div>
+    <div class="awards-sub" style="margin-bottom:2px">ОТКРЫТА НАГРАДА</div>
+    <h2 id="awName" style="margin-bottom:4px">Название</h2>
+    <p id="awDesc">Условие</p>
+    <div class="row"><button class="btn btn-gold" id="awBtn">В шкаф</button></div>
+  </div>
+</div>
+
+<!-- ================= МОДАЛКИ ================= -->
+<div class="modal-backdrop" id="mbGuess" hidden>
+  <div class="modal">
+    <h3>Открыть слово</h3>
+    <p class="msub">Введите слово целиком. Ошибётесь — ход перейдёт.</p>
+    <input class="word-input" id="guessInput" maxlength="16" placeholder="СЛОВО" autocomplete="off" spellcheck="false" autocapitalize="characters">
+    <div class="mrow">
+      <button class="btn btn-ghost" id="guessCancel">Отмена</button>
+      <button class="btn btn-gold" onclick="submitGuess()">Открыть</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mbPrize" hidden>
+  <div class="modal prize-card">
+    <div class="awards-sub" style="margin:0">СЕКТОР ПРИЗ</div>
+    <div class="prize-emoji" id="prizeEmoji">🎁</div>
+    <div class="prize-title" id="prizeTitle">Приз</div>
+    <div class="prize-text" id="prizeText">Описание</div>
+    <div class="mrow"><button class="btn btn-gold" onclick="closePrize()">Забрать</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mbName" hidden>
+  <div class="modal">
+    <h3>Ваше имя</h3>
+    <p class="msub">Оно будет видно соперникам в комнате друзей.</p>
+    <input class="word-input" id="nameInput" maxlength="18" placeholder="ИМЯ" autocomplete="off" style="letter-spacing:.06em;font-size:20px">
+    <div class="mrow">
+      <button class="btn btn-ghost" id="nameCancel">Отмена</button>
+      <button class="btn btn-gold" id="nameSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mbConfirm" hidden>
+  <div class="modal">
+    <h3 id="confirmTitle">Выйти?</h3>
+    <p class="msub" id="confirmText">Текущий матч будет завершён.</p>
+    <div class="mrow">
+      <button class="btn btn-ghost" id="confirmNo">Отмена</button>
+      <button class="btn btn-gold" id="confirmYes">Выйти</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="confetti"></canvas>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ============================================================
+   ПОЛЕ ЧУДЕС — ТВ-шоу на телефоне
+   Один файл, vanilla JS, без сборщиков.
+   ============================================================ */
+'use strict';
+
+/* ============================================================
+   КОНФИГ FIREBASE
+   Заполните значениями из консоли Firebase (Project settings →
+   Your apps → Web app). Если apiKey пустой — мультиплеер
+   отключён, соло-режим работает всегда.
+   ============================================================ */
+const FIREBASE_CONFIG = Object.assign({
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  messagingSenderId: "",
+  appId: ""
+}, window.PZ_FIREBASE_CONFIG || {});
+
+/* ---------- Telegram Mini App ---------- */
+let TG = null;
+try {
+  if (window.Telegram && window.Telegram.WebApp) {
+    TG = window.Telegram.WebApp;
+    TG.ready();
+    TG.expand();
+    try { if (TG.disableVerticalSwipes) TG.disableVerticalSwipes(); } catch (e) {}
+    try { TG.setHeaderColor("#0a0612"); TG.setBackgroundColor("#0a0612"); } catch (e) {}
+  }
+} catch (e) {}
+
+function telegramName() {
+  try {
+    const u = TG && TG.initDataUnsafe && TG.initDataUnsafe.user;
+    if (u && u.first_name) return cleanName(u.first_name);
+  } catch (e) {}
+  return null;
+}
+
+function cleanName(s) {
+  return String(s == null ? "" : s).replace(/[<>&"']/g, "").replace(/\s+/g, " ").trim().slice(0, 18);
+}
+
+/* ============================================================
+   КОНСТАНТЫ
+   ============================================================ */
+const LS = {
+  profile: "pz_profile_v1",
+  sound: "pz_sound_v1",
+  counted: "pz_counted_"
+};
+
+const ABC = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("");
+const VOWELS = new Set(["А", "Е", "Ё", "И", "О", "У", "Ы", "Э", "Ю", "Я"]);
+
+const SECTORS = [
+  { t: "pts",   v: 1,  c: "#7c3aed" },
+  { t: "pts",   v: 2,  c: "#db2777" },
+  { t: "pts",   v: 1,  c: "#2563eb" },
+  { t: "pts",   v: 5,  c: "#0891b2" },
+  { t: "pts",   v: 1,  c: "#7c3aed" },
+  { t: "prize",        c: "#f59e0b" },
+  { t: "pts",   v: 2,  c: "#db2777" },
+  { t: "pts",   v: 1,  c: "#2563eb" },
+  { t: "pts",   v: 10, c: "#dc2626" },
+  { t: "pts",   v: 2,  c: "#db2777" },
+  { t: "pts",   v: 1,  c: "#7c3aed" },
+  { t: "skip",         c: "#475569" },
+  { t: "pts",   v: 5,  c: "#0891b2" },
+  { t: "pts",   v: 1,  c: "#2563eb" },
+  { t: "pts",   v: 2,  c: "#db2777" },
+  { t: "bankrupt",     c: "#111827" },
+  { t: "pts",   v: 1,  c: "#7c3aed" },
+  { t: "prize",        c: "#f59e0b" }
+];
+const SECTOR_STEP = 360 / SECTORS.length;
+const SECTOR_WEIGHTS = SECTORS.map((s) => 1); // равные сектора, редкость задаётся количеством
+
+const PRIZES = [
+  { type: "points", value: 100,  icon: "💰", text: "100 очков" },
+  { type: "points", value: 200,  icon: "💵", text: "200 очков" },
+  { type: "points", value: 300,  icon: "💸", text: "300 очков" },
+  { type: "points", value: 500,  icon: "🤑", text: "500 очков" },
+  { type: "points", value: 250,  icon: "🪙", text: "250 очков" },
+  { type: "figure", icon: "💎",  text: "фигурка" }
+];
+
+const FIGURES = [
+  { id: "car",     icon: "🏎️", name: "Золотой автомобиль" },
+  { id: "diamond", icon: "💎", name: "Бриллиант" },
+  { id: "crown",   icon: "👑", name: "Корона" },
+  { id: "rocket",  icon: "🚀", name: "Ракета" },
+  { id: "cat",     icon: "🐈‍⬛", name: "Чёрный кот" },
+  { id: "star",    icon: "⭐", name: "Звезда эфира" }
+];
+
+/* ============================================================
+   СЛОВАРЬ: 12 категорий × 14+ слов (всего > 200)
+   ============================================================ */
+const WORDS = {
+  "Города России": [
+    "Москва", "Петербург", "Казань", "Самара", "Омск", "Сочи", "Тула", "Рязань",
+    "Ярославль", "Мурманск", "Иркутск", "Волгоград", "Владивосток", "Калининград",
+    "Красноярск", "Воронеж", "Кострома", "Архангельск"
+  ],
+  "Кино и сериалы": [
+    "Матрица", "Титаник", "Аватар", "Джокер", "Гладиатор", "Терминатор", "Пираты",
+    "Оскар", "Премьера", "Сценарий", "Комедия", "Триллер", "Экшен", "Кинотеатр",
+    "Сериал", "Каскадер"
+  ],
+  "Еда и кухня": [
+    "Пельмени", "Борщ", "Плов", "Винегрет", "Оливье", "Шашлык", "Блины", "Сырник",
+    "Курица", "Гречка", "Морковь", "Капуста", "Пряник", "Зефир", "Кисель",
+    "Окрошка", "Расстегай", "Котлета"
+  ],
+  "Технологии": [
+    "Компьютер", "Смартфон", "Интернет", "Процессор", "Нейросеть", "Программа",
+    "Клавиатура", "Монитор", "Сервер", "Приложение", "Робот", "Транзистор",
+    "Микросхема", "Алгоритм", "Браузер", "Пароль", "Гаджет", "Сайт"
+  ],
+  "Природа": [
+    "Вулкан", "Ледник", "Тайга", "Степь", "Пустыня", "Водопад", "Радуга", "Гроза",
+    "Метель", "Туман", "Фьорд", "Каньон", "Пещера", "Лагуна", "Тундра", "Дюна",
+    "Океан", "Гейзер"
+  ],
+  "История": [
+    "Фараон", "Пирамида", "Крепость", "Рыцарь", "Империя", "Революция", "Династия",
+    "Летопись", "Викинг", "Колизей", "Амулет", "Пергамент", "Знамя", "Цитадель",
+    "Обелиск", "Мечеть", "Трон", "Гусар", "Бронза"
+  ],
+  "Спорт": [
+    "Футбол", "Хоккей", "Баскетбол", "Теннис", "Волейбол", "Гимнастика", "Биатлон",
+    "Шахматы", "Марафон", "Плавание", "Бокс", "Дзюдо", "Фехтование", "Стадион",
+    "Тренер", "Рекорд", "Чемпион", "Вратарь"
+  ],
+  "Литература": [
+    "Роман", "Поэма", "Сказка", "Басня", "Новелла", "Повесть", "Драма",
+    "Библиотека", "Писатель", "Поэт", "Рифма", "Эпиграф", "Сюжет", "Глава",
+    "Книга", "Стихотворение"
+  ],
+  "Наука и космос": [
+    "Галактика", "Планета", "Комета", "Астероид", "Орбита", "Ракета", "Спутник",
+    "Невесомость", "Телескоп", "Квазар", "Нейтрино", "Молекула", "Атом",
+    "Гравитация", "Эксперимент", "Лаборатория", "Магнит", "Фотон"
+  ],
+  "Мультфильмы": [
+    "Смешарики", "Буратино", "Чиполлино", "Незнайка", "Чебурашка", "Карлсон",
+    "Шапокляк", "Айболит", "Матроскин", "Винни-Пух", "Черепашка", "Мультик",
+    "Анимация", "Печкин", "Фиксик", "Шрек", "Малыш", "Крокодил"
+  ],
+  "Музыка": [
+    "Гитара", "Скрипка", "Фортепиано", "Саксофон", "Барабан", "Оркестр", "Мелодия",
+    "Аккорд", "Песня", "Альбом", "Концерт", "Вокал", "Синтезатор", "Тромбон",
+    "Нота", "Ритм", "Оперетта", "Камертон"
+  ],
+  "География мира": [
+    "Америка", "Африка", "Европа", "Австралия", "Антарктида", "Сахара", "Эверест",
+    "Амазонка", "Гималаи", "Континент", "Экватор", "Архипелаг", "Пролив", "Остров",
+    "Канал", "Бермуды", "Панама", "Титикака"
+  ]
+};
+const CATEGORIES = Object.keys(WORDS);
+
+/* ---------- реплики ведущего (40+) ---------- */
+const HOST = {
+  start: [
+    "Крутите барабан! Удачи!",
+    "Начинаем! Ваш ход.",
+    "Барабан ждёт. Крутите!",
+    "Внимание на табло. Крутите!"
+  ],
+  spin: [
+    "Барабан крутится…",
+    "Посмотрим, что выпадет.",
+    "Крутите смелее!",
+    "Барабан, не подведи!"
+  ],
+  correct: [
+    "Правильно!",
+    "Буква {L} есть в этом слове!",
+    "Верно! Есть такая буква.",
+    "Точно в цель!",
+    "Аплодисменты! Буква {L} на месте.",
+    "Отличный выбор!",
+    "Вот это буква!",
+    "Браво! Продолжайте."
+  ],
+  wrong: [
+    "Мимо!",
+    "Увы, такой буквы нет.",
+    "Барабан молчит…",
+    "Не угадали. Буквы {L} здесь нет.",
+    "Мимо, но не сдавайтесь!",
+    "Такой буквы нет — ход переходит.",
+    "Не та буква. Бывает."
+  ],
+  bankrupt: [
+    "Банкрот! Очки раунда сгорели.",
+    "Ох! Банкрот. Бывает и такое.",
+    "БАНКРОТ! Зато опыт — бесценен.",
+    "Очки раунда улетели в трубу."
+  ],
+  skip: [
+    "Пропуск хода. Передайте барабан.",
+    "Пропуск! Не расстраивайтесь.",
+    "Ход переходит дальше.",
+    "Сектор ПРОПУСК. В следующий раз повезёт."
+  ],
+  prize: [
+    "Приз! Открываем конверт…",
+    "Сектор ПРИЗ! Что там внутри?",
+    "Вам конверт! Посмотрим.",
+    "Приз на табло. Забирайте!"
+  ],
+  roundWin: [
+    "Слово открыто! Браво!",
+    "Раунд ваш! Так держать!",
+    "Вот это финал раунда!",
+    "Отличная игра! Раунд за вами."
+  ],
+  roundLose: [
+    "Раунд завершён. Повезёт в следующем!",
+    "Слово открыто. Исправим в новом раунде.",
+    "Не страшно. Дальше — больше."
+  ],
+  final: [
+    "Финал! Назовите 3 согласные и 1 гласную.",
+    "Финальное слово! Внимание на табло.",
+    "Финал! Три согласные и одна гласная."
+  ],
+  finalWin: [
+    "ДЖЕКПОТ! Слово угадано целиком!",
+    "Бриллиантовый финал!",
+    "Джекпот ваш! Так держать!"
+  ],
+  finalLose: [
+    "Увы, финал не ваш. Но очки за буквы — ваши.",
+    "Три ошибки. Финал завершён.",
+    "Не в этот раз. Очки за буквы останутся с вами."
+  ],
+  hostTurn: [
+    "Ход ведущего…",
+    "Ведущий делает ход…",
+    "Посмотрим, что откроет ведущий…"
+  ],
+  hostReveal: [
+    "Ведущий открывает букву {L}.",
+    "Подсказка от ведущего: буква {L}.",
+    "Ведущий милостив: буква {L} на табло."
+  ],
+  hostMercy: [
+    "Ведущий хитро молчит. Угадывайте сами!",
+    "Последнюю букву ведущий не скажет.",
+    "Ведущий оставил букву вам."
+  ]
+};
+
+/* ============================================================
+   // === state ===
+   ============================================================ */
+const S = {
+  screen: "home",
+  mode: "solo",
+  sound: true,
+  busy: false,
+  pendingAwards: [],
+  lastPhase: null,
+  guessShown: false,
+  timerInt: null,
+  boardWord: "",
+  spinLock: false,
+  confirmAction: null,
+  mpMatchShown: false,
+  mpUnlocked: []
+};
+
+let G = null;          // соло-матч
+let R = null;          // комната (мультиплеер)
+let P = null;          // профиль игрока
+
+let db = null;         // firestore
+let auth = null;
+let uid = null;
+let authPromise = null;
+let roomUnsub = null;
+let currentCode = null;
+let lastSpinSeq = 0;
+let autoPassTimer = null;
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function norm(s) {
+  return String(s == null ? "" : s).toUpperCase().replace(/Ё/g, "Е");
+}
+function normWord(s) {
+  return norm(s).replace(/[^А-Я]/g, "");
+}
+function lettersOf(word) {
+  return norm(word).replace(/[^А-Я]/g, "").split("");
+}
+function uniqueLetters(word) {
+  return Array.from(new Set(lettersOf(word)));
+}
+function countLetter(word, letter) {
+  const l = norm(letter);
+  return lettersOf(word).filter((x) => x === l).length;
+}
+function wordComplete(word, revealed) {
+  return uniqueLetters(word).every((l) => revealed.has(l));
+}
+function isVowel(l) {
+  return VOWELS.has(norm(l));
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+function fmt(n) {
+  return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+function hostLine(group, vars) {
+  let t = pick(HOST[group] || ["…"]);
+  if (vars) for (const k in vars) t = t.split("{" + k + "}").join(vars[k]);
+  return t;
+}
+function toast(msg, ms) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), ms || 2200);
+}
+function pickWord(minLen, maxLen, exclude) {
+  const used = new Set((exclude || []).map(norm));
+  const cats = CATEGORIES.slice().sort(() => Math.random() - 0.5);
+  for (const cat of cats) {
+    const list = WORDS[cat].filter((w) => {
+      const n = lettersOf(w).length;
+      return n >= minLen && n <= maxLen && !used.has(norm(w));
+    });
+    if (list.length) return { word: pick(list), category: cat };
+  }
+  // fallback: любая категория
+  const cat = pick(CATEGORIES);
+  return { word: pick(WORDS[cat]), category: cat };
+}
+function randCode() {
+  const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 4; i++) s += A[Math.floor(Math.random() * A.length)];
+  return s;
+}
+function playerObj() {
+  return {
+    uid: uid || "local",
+    name: P.name || "Гость",
+    score: 0,
+    roundBank: 0,
+    letters: 0,
+    bestRound: 0,
+    hadBankrupt: false,
+    prizes: 0
+  };
+}
+function turnName(r) {
+  const p = (r.players || []).find((x) => x.uid === r.turnUid);
+  return p ? p.name : "—";
+}
+
+/* ============================================================
+   ЗВУК (WebAudio, без файлов)
+   ============================================================ */
+const Sound = {
+  ctx: null,
+  on: true,
+  init() {
+    if (this.ctx) {
+      if (this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
+      return;
+    }
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) this.ctx = new AC();
+    } catch (e) {}
+  },
+  tone(freq, dur, type, vol, when) {
+    if (!this.on || !this.ctx) return;
+    try {
+      const t = this.ctx.currentTime + (when || 0);
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = type || "sine";
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (dur || 0.1));
+      o.connect(g);
+      g.connect(this.ctx.destination);
+      o.start(t);
+      o.stop(t + (dur || 0.1) + 0.03);
+    } catch (e) {}
+  },
+  noise(dur, vol, freq, when) {
+    if (!this.on || !this.ctx) return;
+    try {
+      const t = this.ctx.currentTime + (when || 0);
+      const len = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
+      const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const f = this.ctx.createBiquadFilter();
+      f.type = "bandpass";
+      f.frequency.value = freq || 1400;
+      f.Q.value = 0.9;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(vol || 0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f);
+      f.connect(g);
+      g.connect(this.ctx.destination);
+      src.start(t);
+      src.stop(t + dur + 0.02);
+    } catch (e) {}
+  },
+  click() { this.init(); this.tone(640, 0.05, "triangle", 0.07); },
+  key() { this.init(); this.tone(420, 0.04, "square", 0.035); },
+  win() {
+    this.init();
+    this.tone(523, 0.12, "triangle", 0.15);
+    this.tone(784, 0.16, "triangle", 0.15, 0.09);
+    this.tone(1046, 0.3, "triangle", 0.13, 0.19);
+  },
+  lose() {
+    this.init();
+    this.tone(240, 0.18, "sawtooth", 0.09);
+    this.tone(170, 0.28, "sawtooth", 0.08, 0.11);
+  },
+  bankrupt() {
+    this.init();
+    this.tone(320, 0.18, "sawtooth", 0.12);
+    this.tone(210, 0.22, "sawtooth", 0.11, 0.14);
+    this.tone(120, 0.5, "sawtooth", 0.1, 0.28);
+    this.noise(0.5, 0.05, 500, 0.2);
+  },
+  applause() {
+    this.init();
+    for (let i = 0; i < 8; i++) this.noise(0.55, 0.06, 1500 + Math.random() * 1600, i * 0.1);
+  },
+  jackpot() {
+    this.init();
+    const notes = [523, 659, 784, 1046, 1318, 1568];
+    notes.forEach((n, i) => this.tone(n, 0.28, "triangle", 0.13, i * 0.09));
+    this.applause();
+  },
+  drum(ms) {
+    if (!this.on) return;
+    this.init();
+    const t0 = performance.now();
+    const tick = () => {
+      if (!this.on) return;
+      const el = performance.now() - t0;
+      if (el > ms) return;
+      this.tone(170 + Math.random() * 50, 0.03, "square", 0.035);
+      const k = el / ms;
+      setTimeout(tick, 45 + k * k * 240);
+    };
+    tick();
+  }
+};
+
+/* ============================================================
+   // === wheel ===
+   ============================================================ */
+let wheelRot = 0;
+
+function sectorLabel(s) {
+  if (s.t === "pts") return "×" + s.v;
+  if (s.t === "prize") return "ПРИЗ";
+  if (s.t === "bankrupt") return "БАНКРОТ";
+  return "ПРОПУСК";
+}
+
+function drawWheel() {
+  const cv = $("#wheel");
+  if (!cv) return;
+  const size = 300;
+  cv.width = size;
+  cv.height = size;
+  const ctx = cv.getContext("2d");
+  if (!ctx) return;
+  const cx = size / 2, cy = size / 2, R = size / 2 - 3;
+  const n = SECTORS.length;
+  const step = (Math.PI * 2) / n;
+
+  ctx.clearRect(0, 0, size, size);
+
+  for (let i = 0; i < n; i++) {
+    const a0 = -Math.PI / 2 + i * step;
+    const a1 = a0 + step;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, a0, a1);
+    ctx.closePath();
+    ctx.fillStyle = SECTORS[i].c;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(8,4,15,.55)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // подпись вдоль радиуса
+    const label = sectorLabel(SECTORS[i]);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(a0 + step / 2);
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    let fs = label.length > 5 ? 18 : label.length > 3 ? 20 : 26;
+    ctx.font = "900 " + fs + "px -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+    ctx.fillStyle = "#fff";
+    ctx.shadowColor = "rgba(0,0,0,.55)";
+    ctx.shadowBlur = 4;
+    ctx.fillText(label, R - 8, 0);
+    ctx.restore();
+  }
+
+  // обод
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = "#ffd75e";
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, R - 5, 0, Math.PI * 2);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255,255,255,.18)";
+  ctx.stroke();
+
+  // блик
+  const grad = ctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, "rgba(255,255,255,.22)");
+  grad.addColorStop(0.45, "rgba(255,255,255,0)");
+  ctx.beginPath();
+  ctx.arc(cx, cy, R - 6, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+}
+
+function pickSectorIndex() {
+  return Math.floor(Math.random() * SECTORS.length);
+}
+
+function wheelTarget(idx) {
+  const jitter = Math.random() * 12 - 6;
+  const desired = (((-(idx + 0.5) * SECTOR_STEP + jitter) % 360) + 360) % 360;
+  const base = Math.ceil(wheelRot / 360) * 360;
+  return base + 360 * 5 + desired;
+}
+
+function animateWheel(target, ms, cb) {
+  const el = $("#wheel");
+  if (!el) { if (cb) cb(); return; }
+  el.style.transition = "transform " + ms + "ms cubic-bezier(.15,.72,.1,1)";
+  void el.offsetWidth;
+  el.style.transform = "rotate(" + target + "deg)";
+  wheelRot = target;
+  Sound.drum(ms);
+  setTimeout(() => { if (cb) cb(); }, ms + 30);
+}
+
+/* ============================================================
+   КОНФЕТТИ
+   ============================================================ */
+function confetti(count) {
+  const cv = $("#confetti");
+  if (!cv) return;
+  const ctx = cv.getContext("2d");
+  if (!ctx) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = window.innerWidth, H = window.innerHeight;
+  cv.width = W * dpr;
+  cv.height = H * dpr;
+  cv.style.display = "block";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const colors = ["#ffd75e", "#ffb01f", "#8b5cf6", "#ec4899", "#34d399", "#60a5fa", "#ffffff"];
+  const ps = [];
+  for (let i = 0; i < (count || 80); i++) {
+    ps.push({
+      x: W / 2 + (Math.random() - 0.5) * 140,
+      y: H * 0.32,
+      vx: (Math.random() - 0.5) * 15,
+      vy: -Math.random() * 15 - 3,
+      g: 0.26 + Math.random() * 0.16,
+      s: 4 + Math.random() * 6,
+      r: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.35,
+      c: pick(colors),
+      life: 0
+    });
+  }
+  let last = performance.now();
+  const loop = (now) => {
+    const dt = Math.min(34, now - last) / 16.67;
+    last = now;
+    ctx.clearRect(0, 0, W, H);
+    let alive = false;
+    for (const p of ps) {
+      p.vy += p.g * dt;
+      p.vx *= 0.995;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.r += p.vr * dt;
+      p.life += dt;
+      if (p.y < H + 30 && p.life < 240) {
+        alive = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.globalAlpha = clamp(1 - (p.life - 170) / 70, 0, 1);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2);
+        ctx.restore();
+      }
+    }
+    if (alive) requestAnimationFrame(loop);
+    else {
+      ctx.clearRect(0, 0, W, H);
+      cv.style.display = "none";
+    }
+  };
+  requestAnimationFrame(loop);
+}
+
+
+/* ============================================================
+   // === awards ===
+   ============================================================ */
+const AWARDS = [
+  { id: "first_show", icon: "🥉", name: "Первое выступление",
+    desc: "Сыграй 1 матч",
+    check: (p) => p.matches >= 1,
+    prog: (p) => [Math.min(p.matches, 1), 1] },
+  { id: "cinema", icon: "🎬", name: "Знаток кино",
+    desc: "Выиграй матч с категорией «Кино и сериалы»",
+    check: (p) => (p.categoriesWon["Кино и сериалы"] || 0) >= 1,
+    prog: (p) => [Math.min(p.categoriesWon["Кино и сериалы"] || 0, 1), 1] },
+  { id: "bookworm", icon: "🔠", name: "Буквоед",
+    desc: "Открой 100 букв",
+    check: (p) => p.letters >= 100,
+    prog: (p) => [Math.min(p.letters, 100), 100] },
+  { id: "bankrupt", icon: "💥", name: "Банкрот-тусовка",
+    desc: "Переживи свой БАНКРОТ и всё равно выиграй матч",
+    check: (p) => (p.bankruptWins || 0) >= 1,
+    prog: (p) => [Math.min(p.bankruptWins || 0, 1), 1] },
+  { id: "mercedes", icon: "🚗", name: "Мерседес мечты",
+    desc: "Набери 3000 очков за один матч",
+    check: (p) => p.bestScore >= 3000,
+    prog: (p) => [Math.min(p.bestScore, 3000), 3000] },
+  { id: "world", icon: "🌍", name: "Кругосветка",
+    desc: "Выиграй матч в 4 разных категориях",
+    check: (p) => Object.keys(p.categoriesWon || {}).length >= 4,
+    prog: (p) => [Math.min(Object.keys(p.categoriesWon || {}).length, 4), 4] },
+  { id: "lightning", icon: "⚡", name: "Молния",
+    desc: "Набери +1000 очков за один раунд",
+    check: (p) => (p.maxRound || 0) >= 1000,
+    prog: (p) => [Math.min(p.maxRound || 0, 1000), 1000] },
+  { id: "legend", icon: "👑", name: "Мистер Поле чудес",
+    desc: "Выиграй 5 матчей",
+    check: (p) => p.wins >= 5,
+    prog: (p) => [Math.min(p.wins, 5), 5] },
+  { id: "lucky", icon: "🎁", name: "Счастливчик Приза",
+    desc: "Выпади сектор ПРИЗ 3 раза",
+    check: (p) => (p.prizeSpins || 0) >= 3,
+    prog: (p) => [Math.min(p.prizeSpins || 0, 3), 3] },
+  { id: "word", icon: "🧩", name: "Слово года",
+    desc: "Открой слово целиком без единой ошибки",
+    check: (p) => (p.cleanWords || 0) >= 1,
+    prog: (p) => [Math.min(p.cleanWords || 0, 1), 1] },
+  { id: "fireproof", icon: "🚀", name: "Несгораемый",
+    desc: "0 поражений в первых 10 матчах",
+    check: (p) => p.matches >= 10 && (p.firstTenLosses || 0) === 0,
+    prog: (p) => [Math.min(p.matches, 10), 10] },
+  { id: "diamond", icon: "💎", name: "Бриллиантовый зал",
+    desc: "Открой все 11 наград выше",
+    check: (p) => AWARDS.filter((a) => a.id !== "diamond").every((a) => a.check(p)),
+    prog: (p) => [AWARDS.filter((a) => a.id !== "diamond").filter((a) => a.check(p)).length, 11] }
+];
+
+function defaultProfile() {
+  return {
+    name: "Гость",
+    matches: 0, wins: 0, bestScore: 0, letters: 0,
+    bankruptWins: 0, prizeSpins: 0, maxRound: 0, cleanWords: 0,
+    categoriesWon: {}, firstTenLosses: 0,
+    awards: [], figures: [],
+    createdAt: Date.now(), updatedAt: Date.now()
+  };
+}
+
+function loadProfile() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LS.profile) || "null"); } catch (e) {}
+  const d = defaultProfile();
+  P = Object.assign(d, saved || {});
+  P.categoriesWon = Object.assign({}, (saved && saved.categoriesWon) || {});
+  P.awards = Array.isArray(P.awards) ? P.awards : [];
+  P.figures = Array.isArray(P.figures) ? P.figures : [];
+  if (!saved) {
+    const tn = telegramName();
+    if (tn) P.name = tn;
+  }
+  P.name = cleanName(P.name) || "Гость";
+  return P;
+}
+
+function saveProfile() {
+  P.updatedAt = Date.now();
+  try { localStorage.setItem(LS.profile, JSON.stringify(P)); } catch (e) {}
+}
+
+async function syncProfileCloud() {
+  if (!db || !uid) return;
+  try {
+    await db.collection("profiles").doc(uid).set({
+      name: P.name,
+      matches: P.matches,
+      wins: P.wins,
+      bestScore: P.bestScore,
+      letters: P.letters,
+      awards: P.awards,
+      figures: P.figures,
+      categoriesWon: P.categoriesWon,
+      updatedAt: Date.now()
+    }, { merge: true });
+  } catch (e) { /* офлайн — не критично */ }
+}
+
+function checkAwards() {
+  const out = [];
+  for (const a of AWARDS) {
+    if (P.awards.indexOf(a.id) === -1 && a.check(P)) {
+      P.awards.push(a.id);
+      out.push(a);
+    }
+  }
+  return out;
+}
+
+function applyMatchResult(res) {
+  P.matches += 1;
+  if (res.won) {
+    P.wins += 1;
+    P.categoriesWon[res.category] = (P.categoriesWon[res.category] || 0) + 1;
+  }
+  if (P.matches <= 10 && !res.won) P.firstTenLosses += 1;
+  P.bestScore = Math.max(P.bestScore, res.score || 0);
+  P.letters += res.letters || 0;
+  P.maxRound = Math.max(P.maxRound, res.maxRound || 0);
+  P.prizeSpins += res.prizeSpins || 0;
+  if (res.bankrupt && res.won) P.bankruptWins += 1;
+  if (res.cleanWords) P.cleanWords += res.cleanWords;
+  if (res.figures && res.figures.length) {
+    for (const f of res.figures) if (P.figures.indexOf(f) === -1) P.figures.push(f);
+  }
+  const unlocked = checkAwards();
+  saveProfile();
+  syncProfileCloud();
+  return unlocked;
+}
+
+/* ============================================================
+   UI: экраны
+   ============================================================ */
+function go(name) {
+  S.screen = name;
+  $$(".screen").forEach((el) => el.classList.remove("active"));
+  const el = $("#scr-" + name);
+  if (el) el.classList.add("active");
+  if (name === "home") renderHome();
+  if (name === "awards") renderAwards();
+  if (name === "profile") renderProfile();
+  if (name === "lobby") renderLobby();
+  updateTgBack();
+}
+
+function renderHome() {
+  $("#homeAvatar").textContent = (P.name || "Г").slice(0, 1).toUpperCase();
+  $("#homeName").textContent = P.name;
+  $("#homeAwards").textContent = P.awards.length + "/12";
+  updateSoundButtons();
+}
+
+function renderProfile() {
+  $("#prAvatar").textContent = (P.name || "Г").slice(0, 1).toUpperCase();
+  $("#prName").textContent = P.name;
+  $("#prMatches").textContent = P.matches;
+  $("#prWins").textContent = P.wins;
+  $("#prBest").textContent = fmt(P.bestScore);
+  $("#prLetters").textContent = P.letters;
+  $("#prAwardsCount").textContent = P.awards.length;
+  $("#prAwards").innerHTML = P.awards.length
+    ? P.awards.map((id) => {
+        const a = AWARDS.find((x) => x.id === id);
+        return a ? `<span class="ae">${a.icon} ${esc(a.name)}</span>` : "";
+      }).join("")
+    : '<span style="font-size:11px;color:var(--dim)">Пока нет наград — сыграйте матч!</span>';
+  $("#figuresProfile").innerHTML = figuresHTML(P.figures);
+}
+
+function figuresHTML(list) {
+  if (!list || !list.length) {
+    return '<div class="fig empty">Пока пусто — фигурки выпадают в секторе ПРИЗ</div>';
+  }
+  return list.map((id) => {
+    const f = FIGURES.find((x) => x.id === id);
+    return f ? `<div class="fig"><span class="fe">${f.icon}</span>${esc(f.name)}</div>` : "";
+  }).join("");
+}
+
+function renderAwards() {
+  const got = P.awards.length;
+  $("#awardsBar").style.width = (got / 12) * 100 + "%";
+  $("#awardsProgress").textContent = "Открыто " + got + " из 12";
+  $("#awardsGrid").innerHTML = AWARDS.map((a) => {
+    const un = P.awards.indexOf(a.id) !== -1;
+    return `<div class="award ${un ? "unlocked" : ""}" onclick="showAwardInfo('${a.id}')">
+      <div class="ai">${a.icon}</div>
+      <div class="an">${esc(a.name)}</div>
+      ${un ? "" : '<div class="lock">🔒</div>'}
+    </div>`;
+  }).join("");
+  $("#figures").innerHTML = figuresHTML(P.figures);
+}
+
+function showAwardInfo(id) {
+  const a = AWARDS.find((x) => x.id === id);
+  if (!a) return;
+  const un = P.awards.indexOf(id) !== -1;
+  const pr = a.prog(P);
+  const status = un ? "Открыто! 🎉" : "Прогресс: " + fmt(pr[0]) + " / " + fmt(pr[1]);
+  showInfo({
+    emoji: a.icon,
+    title: a.name,
+    text: esc(a.desc) + "<br><b style=\"color:#ffd75e\">" + status + "</b>",
+    btn: un ? "Круто!" : "Понятно"
+  });
+}
+
+function showInfo(opts) {
+  const wrap = document.createElement("div");
+  wrap.className = "modal-backdrop";
+  wrap.innerHTML = `<div class="modal">
+      <div class="sheet-emoji" style="font-size:46px">${opts.emoji || "🏆"}</div>
+      <h3>${esc(opts.title || "")}</h3>
+      <p class="msub">${opts.text || ""}</p>
+      <div class="mrow"><button class="btn btn-gold" id="__infoBtn">${esc(opts.btn || "Понятно")}</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = () => wrap.remove();
+  wrap.addEventListener("click", (e) => { if (e.target === wrap) close(); });
+  const b = wrap.querySelector("#__infoBtn");
+  if (b) b.addEventListener("click", close);
+}
+
+/* ============================================================
+   ЗВУК: переключатель
+   ============================================================ */
+function toggleSound() {
+  S.sound = !S.sound;
+  Sound.on = S.sound;
+  try { localStorage.setItem(LS.sound, S.sound ? "1" : "0"); } catch (e) {}
+  updateSoundButtons();
+  if (S.sound) Sound.click();
+}
+
+function updateSoundButtons() {
+  const t = S.sound ? "🔊" : "🔇";
+  const a = $("#homeSound"), b = $("#gameSound");
+  if (a) a.textContent = t;
+  if (b) b.textContent = t;
+}
+
+/* ============================================================
+   ТАБЛО И КЛАВИАТУРА
+   ============================================================ */
+function buildBoard(container, word) {
+  if (!container) return;
+  container.innerHTML = "";
+  const chars = norm(word).split("");
+  const letterCount = chars.filter((c) => /[А-Я]/.test(c)).length;
+  const per = Math.ceil(letterCount / Math.ceil(letterCount / 6));
+  const tokens = chars.map((ch) => (/[А-Я]/.test(ch) ? { t: "l", ch: ch } : { t: "g" }));
+  const rows = [];
+  let cur = [], cnt = 0;
+  for (const tk of tokens) {
+    cur.push(tk);
+    if (tk.t === "l") cnt++;
+    if (cnt === per) { rows.push(cur); cur = []; cnt = 0; }
+  }
+  if (cur.length) rows.push(cur);
+
+  for (const row of rows) {
+    const r = document.createElement("div");
+    r.className = "board-row";
+    for (const tk of row) {
+      if (tk.t === "g") {
+        const g = document.createElement("div");
+        g.className = "board-gap";
+        r.appendChild(g);
+      } else {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.dataset.letter = tk.ch;
+        c.innerHTML = '<span class="cell-dot">◆</span><span class="cell-letter">' + tk.ch + "</span>";
+        r.appendChild(c);
+      }
+    }
+    container.appendChild(r);
+  }
+}
+
+function updateBoard(container, revealed) {
+  if (!container) return;
+  $$(".cell", container).forEach((cell) => {
+    if (revealed.has(cell.dataset.letter)) cell.classList.add("open");
+  });
+}
+
+function buildKbd() {
+  const el = $("#gKbd");
+  if (!el) return;
+  el.innerHTML = "";
+  for (const l of ABC) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "key";
+    b.dataset.letter = l;
+    b.textContent = l;
+    el.appendChild(b);
+  }
+}
+
+function updateKbd(opts) {
+  const kbdEl = $("#gKbd");
+  if (kbdEl) kbdEl.classList.toggle("locked", !!opts.disabled);
+  const used = opts.used || new Set();
+  const hits = opts.hits || new Set();
+  const misses = opts.misses || new Set();
+  const disabled = !!opts.disabled;
+  const allowed = opts.allowed || null;
+  $$("#gKbd .key").forEach((k) => {
+    const l = k.dataset.letter;
+    k.classList.toggle("used", used.has(l) && !hits.has(l) && !misses.has(l));
+    k.classList.toggle("hit", hits.has(l));
+    k.classList.toggle("miss", misses.has(l));
+    let dis = disabled || used.has(l);
+    if (!dis && allowed && !allowed(l)) dis = true;
+    k.disabled = dis;
+  });
+}
+
+/* ============================================================
+   МОДАЛКИ
+   ============================================================ */
+function openGuessModal(opts) {
+  const mb = $("#mbGuess");
+  mb.hidden = false;
+  const inp = $("#guessInput");
+  inp.value = "";
+  $("#guessCancel").style.display = opts && opts.cancel === false ? "none" : "";
+  setTimeout(() => { try { inp.focus(); } catch (e) {} }, 60);
+}
+
+function closeGuess() {
+  $("#mbGuess").hidden = true;
+}
+
+function submitGuess() {
+  const v = normWord($("#guessInput").value);
+  if (v.length < 2) { toast("Введите слово"); return; }
+  closeGuess();
+  if (S.mode === "solo") {
+    if (G && G.phase === "finalGuess") finalGuess(v);
+    else soloGuess(v);
+  } else {
+    if (R && R.phase === "finalGuess") mpFinalGuess(v);
+    else mpGuess(v);
+  }
+}
+
+function cancelGuess() {
+  closeGuess();
+  if (S.mode === "solo") {
+    if (G && G.phase === "guess") G.phase = "choose";
+    renderSolo();
+  } else {
+    mpCancelGuess();
+  }
+}
+
+function showPrize(prize, cb) {
+  $("#mbPrize").hidden = false;
+  $("#prizeEmoji").textContent = prize.icon || "🎁";
+  $("#prizeTitle").textContent = prize.title || "Приз";
+  $("#prizeText").textContent = prize.text || "";
+  $("#mbPrize")._cb = cb || null;
+}
+
+function closePrize() {
+  $("#mbPrize").hidden = true;
+  const cb = $("#mbPrize")._cb;
+  $("#mbPrize")._cb = null;
+  if (cb) cb();
+}
+
+function askConfirm(title, text, cb) {
+  S.confirmAction = cb;
+  $("#confirmTitle").textContent = title;
+  $("#confirmText").textContent = text;
+  $("#mbConfirm").hidden = false;
+}
+
+function resolveConfirm(yes) {
+  $("#mbConfirm").hidden = true;
+  const cb = S.confirmAction;
+  S.confirmAction = null;
+  if (yes && cb) cb();
+}
+
+/* ============================================================
+   ОВЕРЛЕИ РАУНДА / МАТЧА / НАГРАДЫ
+   ============================================================ */
+function showRoundEnd(o) {
+  $("#ovRound").hidden = false;
+  $("#orEmoji").textContent = o.emoji || "🎉";
+  $("#orTitle").textContent = o.title || "Раунд";
+  $("#orCat").textContent = o.category || "";
+  $("#orWord").textContent = o.word || "";
+  $("#orPoints").textContent = (o.points >= 0 ? "+" : "") + fmt(o.points || 0);
+  $("#orWinner").textContent = o.winner || "";
+  const hintEl = $("#orHint");
+  hintEl.innerHTML = o.hint || "";
+  if (o.onExit) {
+    const a = document.createElement("button");
+    a.className = "link";
+    a.textContent = "Выйти из комнаты";
+    a.style.marginTop = "8px";
+    a.onclick = () => { $("#ovRound").hidden = true; o.onExit(); };
+    hintEl.appendChild(document.createElement("br"));
+    hintEl.appendChild(a);
+  }
+  const btn = $("#orBtn");
+  btn.textContent = o.btnText || "Дальше";
+  btn.hidden = !!o.hideBtn;
+  btn.onclick = () => {
+    $("#ovRound").hidden = true;
+    if (o.onNext) o.onNext();
+  };
+}
+
+function showMatchEnd(o) {
+  $("#ovMatch").hidden = false;
+  $("#omEmoji").textContent = o.emoji || "🏆";
+  $("#omTitle").textContent = o.title || "Матч завершён";
+  $("#omWord").textContent = o.word || "";
+  $("#omScore").textContent = fmt(o.score || 0);
+  $("#omStats").innerHTML = [
+    ["Раунды", o.rounds || "—"],
+    ["Буквы", o.letters != null ? o.letters : "—"],
+    ["Лучший раунд", o.maxRound != null ? fmt(o.maxRound) : "—"]
+  ].map((x) => `<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
+  $("#omAwards").innerHTML = (o.awards && o.awards.length)
+    ? o.awards.map((a) => `<span class="ae">${a.icon} ${esc(a.name)}</span>`).join("")
+    : "";
+  $("#omHint").textContent = o.hint || "";
+  const btn = $("#omBtn");
+  btn.textContent = o.btnText || "В меню";
+  btn.onclick = () => {
+    $("#ovMatch").hidden = true;
+    if (o.onNext) o.onNext();
+  };
+}
+
+function showAwardQueue(list, done) {
+  if (!list || !list.length) { if (done) done(); return; }
+  const a = list[0];
+  $("#ovAward").hidden = false;
+  $("#awEmoji").textContent = a.icon;
+  $("#awName").textContent = a.name;
+  $("#awDesc").textContent = a.desc;
+  confetti(90);
+  Sound.applause();
+  $("#awBtn").onclick = () => {
+    $("#ovAward").hidden = true;
+    showAwardQueue(list.slice(1), done);
+  };
+}
+
+function closeMatchOverlay() {
+  $("#ovMatch").hidden = true;
+  const pend = S.pendingAwards.slice();
+  S.pendingAwards = [];
+  if (pend.length) {
+    showAwardQueue(pend, () => { renderHome(); go("awards"); });
+  } else {
+    renderHome();
+    go("home");
+  }
+}
+
+
+/* ============================================================
+   СОЛО-РЕЖИМ
+   ============================================================ */
+function startSolo() {
+  if (roomUnsub) leaveRoom();
+  Sound.init();
+  Sound.click();
+  S.mode = "solo";
+  S.pendingAwards = [];
+  G = {
+    round: 1,
+    category: "",
+    word: "",
+    revealed: new Set(),
+    used: new Set(),
+    missed: new Set(),
+    multiplier: 1,
+    phase: "spin",
+    score: 0,
+    roundBank: 0,
+    wrongThisRound: 0,
+    history: [],
+    usedWords: [],
+    final: null,
+    stats: { letters: 0, maxRound: 0, bankrupt: false, prizeSpins: 0, cleanWords: 0, figures: [] }
+  };
+  go("game");
+  startSoloRound(1);
+}
+
+function startSoloRound(n) {
+  const pw = pickWord(4, 12, G.usedWords);
+  G.round = n;
+  G.word = pw.word;
+  G.category = pw.category;
+  G.usedWords.push(pw.word);
+  G.revealed = new Set();
+  G.used = new Set();
+  G.missed = new Set();
+  G.wrongThisRound = 0;
+  G.roundBank = 0;
+  G.multiplier = 1;
+  G.phase = "spin";
+  buildBoard($("#gBoard"), G.word);
+  updateBoard($("#gBoard"), G.revealed);
+  setHost(hostLine("start"));
+  renderSolo();
+}
+
+function setHost(text) {
+  const el = $("#gHost");
+  if (el) el.textContent = "Ведущий: " + text;
+}
+
+function renderSolo() {
+  if (!G) return;
+  const isFinal = G.phase === "finalPick" || G.phase === "finalGuess" || G.phase === "matchEnd";
+  $("#gRound").textContent = isFinal ? "ФИНАЛ" : "Раунд " + G.round + " из 3";
+  $("#gCat").textContent = G.category || "—";
+  $("#gTimerWrap").hidden = true;
+  $("#gPlayers").innerHTML =
+    '<div class="pchip active">' +
+      '<div class="pn">' + esc(P.name) + " · вы</div>" +
+      '<div class="ps">' + fmt(G.score) + "</div>" +
+      '<div class="pr">раунд +' + fmt(G.roundBank) + "</div>" +
+    "</div>";
+
+  $("#btnSpin").hidden = G.phase !== "spin";
+  $("#gSpinWait").hidden = G.phase !== "wait" && G.phase !== "host";
+  $("#gChoose").hidden = G.phase !== "choose";
+  $("#btnReopen").hidden = G.phase !== "guess";
+  $("#gKbd").hidden = !(G.phase === "letter" || G.phase === "finalPick");
+  $("#gFinalPanel").hidden = !(G.phase === "finalPick" || G.phase === "finalGuess");
+  $("#scr-game").classList.toggle("kbd-open", G.phase === "letter" || G.phase === "finalPick");
+  const finalPhase = G.phase === "finalPick" || G.phase === "finalGuess";
+  $("#wheelWrap").hidden = finalPhase;
+  $("#gSide").hidden = finalPhase;
+  $("#gFinalStage").hidden = !finalPhase;
+  if (finalPhase) {
+    $("#fsValue").textContent = fmt(lettersOf(G.word).length * 250);
+    $("#fsHint").textContent = G.phase === "finalGuess" ? "Назовите слово целиком!" : "Выберите 3 согласные и 1 гласную";
+  }
+
+  let hint = "";
+  if (G.phase === "spin") hint = "Ваш ход — крутите барабан";
+  else if (G.phase === "letter") hint = "Назовите букву · сектор <b>×" + G.multiplier + "</b>";
+  else if (G.phase === "choose") hint = "Буква есть! Что дальше?";
+  else if (G.phase === "wait") hint = "Ход ведущего…";
+  else if (G.phase === "host") hint = "Ведущий смотрит на табло…";
+  else if (G.phase === "finalPick") hint = "Выберите <b>3 согласные</b> и <b>1 гласную</b>";
+  else if (G.phase === "finalGuess") hint = "Назовите слово целиком!";
+  else if (G.phase === "roundEnd") hint = "Раунд завершён";
+  else if (G.phase === "matchEnd") hint = "Матч завершён";
+  $("#gHint").innerHTML = hint;
+
+  if (G.phase === "finalPick" || G.phase === "finalGuess") {
+    const f = G.final || { consonants: 0, vowels: 0, mistakes: 0 };
+    $("#fpCons").innerHTML = "Согласные <b>" + f.consonants + "/3</b>";
+    $("#fpVow").innerHTML = "Гласные <b>" + f.vowels + "/1</b>";
+    $("#fpErr").className = "fp-item" + (f.mistakes > 0 ? " danger" : "");
+    $("#fpErr").innerHTML = "Ошибки <b>" + f.mistakes + "/3</b>";
+  }
+
+  if (G.phase === "letter" || G.phase === "finalPick") {
+    updateKbd({
+      used: G.used,
+      hits: G.revealed,
+      misses: G.missed,
+      disabled: false,
+      allowed: G.phase === "finalPick" ? soloFinalAllowed : null
+    });
+  }
+}
+
+function soloFinalAllowed(l) {
+  if (!G || !G.final) return false;
+  if (isVowel(l)) return G.final.vowels < 1;
+  return G.final.consonants < 3;
+}
+
+function doSpin() {
+  if (S.mode !== "solo") { mpSpin(); return; }
+  if (!G || G.phase !== "spin" || S.spinLock) return;
+  Sound.click();
+  S.spinLock = true;
+  $("#btnSpin").disabled = true;
+  const idx = pickSectorIndex();
+  const target = wheelTarget(idx);
+  const game = G;
+  setHost(hostLine("spin"));
+  animateWheel(target, 2800, () => {
+    S.spinLock = false;
+    const b = $("#btnSpin");
+    if (b) b.disabled = false;
+    if (G !== game || S.mode !== "solo") return;
+    resolveSector(SECTORS[idx], idx);
+  });
+}
+
+function drawPrize() {
+  const r = Math.random();
+  if (r < 0.2) {
+    const avail = FIGURES.filter((f) => P.figures.indexOf(f.id) === -1);
+    if (avail.length) {
+      const f = pick(avail);
+      return { type: "figure", figureId: f.id, icon: f.icon, title: f.name, text: "Фигурка отправлена в ваш шкаф наград!" };
+    }
+  }
+  const v = pick([100, 200, 250, 300, 500]);
+  return { type: "points", value: v, icon: "💰", title: "+" + v + " очков", text: "Приз зачислен в раунд" };
+}
+
+function resolveSector(s, idx) {
+  if (!G) return;
+  if (s.t === "pts") {
+    G.multiplier = s.v;
+    G.phase = "letter";
+    setHost("Сектор ×" + s.v + "! Назовите букву.");
+    Sound.win();
+    renderSolo();
+  } else if (s.t === "prize") {
+    G.stats.prizeSpins++;
+    const prize = drawPrize();
+    if (prize.type === "points") {
+      G.score += prize.value;
+      G.roundBank += prize.value;
+      G.stats.maxRound = Math.max(G.stats.maxRound, G.roundBank);
+    } else {
+      P.figures.push(prize.figureId);
+      G.stats.figures.push(prize.figureId);
+      saveProfile();
+      syncProfileCloud();
+    }
+    G.multiplier = 1;
+    G.phase = "letter";
+    setHost(hostLine("prize"));
+    Sound.applause();
+    renderSolo();
+    showPrize({ icon: prize.icon, title: prize.title, text: prize.text }, () => renderSolo());
+  } else if (s.t === "bankrupt") {
+    G.score -= G.roundBank;
+    G.roundBank = 0;
+    G.stats.bankrupt = true;
+    G.phase = "wait";
+    Sound.bankrupt();
+    setHost(hostLine("bankrupt"));
+    renderSolo();
+    setTimeout(hostTurn, 1700);
+  } else {
+    G.phase = "wait";
+    Sound.lose();
+    setHost(hostLine("skip"));
+    renderSolo();
+    setTimeout(hostTurn, 1400);
+  }
+}
+
+function hostTurn() {
+  if (!G || S.mode !== "solo") return;
+  if (G.phase !== "wait" && G.phase !== "host") return;
+  G.phase = "host";
+  setHost(hostLine("hostTurn"));
+  renderSolo();
+  const game = G;
+  setTimeout(() => {
+    if (G !== game || !G || G.phase !== "host") return;
+    const unrevealed = uniqueLetters(G.word).filter((l) => !G.revealed.has(l));
+    if (unrevealed.length > 1) {
+      const l = pick(unrevealed);
+      G.revealed.add(l);
+      updateBoard($("#gBoard"), G.revealed);
+      setHost(hostLine("hostReveal", { L: l }));
+      Sound.click();
+    } else {
+      setHost(hostLine("hostMercy"));
+    }
+    G.phase = "spin";
+    G.multiplier = 1;
+    renderSolo();
+  }, 1200);
+}
+
+function soloLetter(l) {
+  if (!G || G.phase !== "letter") return;
+  if (G.used.has(l)) return;
+  Sound.key();
+  G.used.add(l);
+  const count = countLetter(G.word, l);
+  if (count > 0) {
+    G.revealed.add(l);
+    const gain = G.multiplier * count * 10;
+    G.score += gain;
+    G.roundBank += gain;
+    G.stats.letters += count;
+    G.stats.maxRound = Math.max(G.stats.maxRound, G.roundBank);
+    updateBoard($("#gBoard"), G.revealed);
+    setHost(hostLine("correct", { L: l }) + " +" + gain);
+    Sound.win();
+    if (wordComplete(G.word, G.revealed)) {
+      endSoloRound(true);
+      return;
+    }
+    G.phase = "choose";
+    renderSolo();
+  } else {
+    G.missed.add(l);
+    G.wrongThisRound++;
+    Sound.lose();
+    setHost(hostLine("wrong", { L: l }));
+    G.phase = "wait";
+    renderSolo();
+    setTimeout(hostTurn, 1500);
+  }
+}
+
+function doContinue() {
+  if (S.mode !== "solo") { mpContinue(); return; }
+  if (!G || G.phase !== "choose") return;
+  Sound.click();
+  G.phase = "spin";
+  renderSolo();
+}
+
+function openGuess() {
+  if (S.mode === "solo") {
+    if (!G) return;
+    if (G.phase === "choose") {
+      G.phase = "guess";
+      renderSolo();
+      openGuessModal({ cancel: true });
+    } else if (G.phase === "finalGuess") {
+      openGuessModal({ cancel: false });
+    }
+  } else {
+    mpOpenGuess();
+  }
+}
+
+function soloGuess(v) {
+  if (!G || G.phase !== "guess") return;
+  if (v === normWord(G.word)) {
+    uniqueLetters(G.word).forEach((l) => G.revealed.add(l));
+    updateBoard($("#gBoard"), G.revealed);
+    Sound.jackpot();
+    setHost(hostLine("roundWin"));
+    endSoloRound(true);
+  } else {
+    G.wrongThisRound++;
+    Sound.lose();
+    setHost("Увы, это не то слово. Ход переходит.");
+    G.phase = "wait";
+    renderSolo();
+    setTimeout(hostTurn, 1500);
+  }
+}
+
+function endSoloRound(won) {
+  if (!G || G.phase === "roundEnd" || G.phase === "matchEnd") return;
+  const bonus = won ? 300 : 0;
+  G.score += bonus;
+  G.roundBank += bonus;
+  G.phase = "roundEnd";
+  if (won && G.wrongThisRound === 0) G.stats.cleanWords++;
+  G.history.push({ round: G.round, word: norm(G.word), category: G.category, points: G.roundBank, won: won });
+  Sound.applause();
+  const isLast = G.round >= 3;
+  showRoundEnd({
+    emoji: won ? "🎉" : "😔",
+    title: "Раунд " + G.round,
+    category: G.category,
+    word: norm(G.word),
+    points: G.roundBank,
+    winner: won ? "Победитель — " + P.name + "!" : "Раунд у ведущего",
+    btnText: isLast ? "Финал" : "Следующий раунд",
+    hint: won ? "Бонус за победу в раунде: +300" : "",
+    onNext: nextSoloRound
+  });
+  renderSolo();
+}
+
+function nextSoloRound() {
+  if (!G) return;
+  if (G.round < 3) startSoloRound(G.round + 1);
+  else startSoloFinal();
+}
+
+function startSoloFinal() {
+  const pw = pickWord(6, 10, G.usedWords);
+  G.word = pw.word;
+  G.category = pw.category;
+  G.usedWords.push(pw.word);
+  G.revealed = new Set();
+  G.used = new Set();
+  G.missed = new Set();
+  G.multiplier = 1;
+  G.roundBank = 0;
+  G.final = { consonants: 0, vowels: 0, mistakes: 0, points: 0, guessed: false };
+  G.phase = "finalPick";
+  buildBoard($("#gBoard"), G.word);
+  updateBoard($("#gBoard"), G.revealed);
+  setHost(hostLine("final"));
+  Sound.win();
+  renderSolo();
+}
+
+function finalPick(l) {
+  if (!G || G.phase !== "finalPick") return;
+  if (G.used.has(l)) return;
+  const v = isVowel(l);
+  if (v && G.final.vowels >= 1) { toast("Гласная уже выбрана"); return; }
+  if (!v && G.final.consonants >= 3) { toast("Согласные уже выбраны"); return; }
+  Sound.key();
+  G.used.add(l);
+  const count = countLetter(G.word, l);
+  if (count > 0) {
+    G.revealed.add(l);
+    const gain = 100 * count;
+    G.score += gain;
+    G.final.points += gain;
+    G.roundBank += gain;
+    G.stats.letters += count;
+    G.stats.maxRound = Math.max(G.stats.maxRound, G.roundBank);
+    updateBoard($("#gBoard"), G.revealed);
+    setHost("Буква " + l + " есть! +" + gain);
+    Sound.win();
+  } else {
+    G.final.mistakes++;
+    G.missed.add(l);
+    Sound.lose();
+    setHost("Буквы " + l + " нет. Ошибка " + G.final.mistakes + "/3");
+  }
+  if (v) G.final.vowels++;
+  else G.final.consonants++;
+  renderSolo();
+
+  const game = G;
+  if (G.final.mistakes >= 3) {
+    setTimeout(() => { if (G === game) endSoloFinal(false); }, 900);
+    return;
+  }
+  if (G.final.consonants >= 3 && G.final.vowels >= 1) {
+    setTimeout(() => {
+      if (G === game && G.phase === "finalPick") {
+        G.phase = "finalGuess";
+        renderSolo();
+        openGuessModal({ cancel: false });
+      }
+    }, 650);
+  }
+}
+
+function finalGuess(v) {
+  if (!G || G.phase !== "finalGuess") return;
+  endSoloFinal(v === normWord(G.word));
+}
+
+function endSoloFinal(won) {
+  if (!G || G.phase === "matchEnd") return;
+  G.phase = "matchEnd";
+  let jackpot = 0;
+  if (won) {
+    jackpot = lettersOf(G.word).length * 50 * 5;
+    G.score += jackpot;
+    G.final.points += jackpot;
+    G.final.guessed = true;
+    G.stats.cleanWords++;
+    Sound.jackpot();
+    setHost(hostLine("finalWin"));
+  } else {
+    Sound.lose();
+    setHost(hostLine("finalLose"));
+  }
+  renderSolo();
+  setTimeout(() => finishSoloMatch(won, jackpot), 600);
+}
+
+function finishSoloMatch(won, jackpot) {
+  const res = {
+    won: won,
+    score: G.score,
+    category: G.category,
+    letters: G.stats.letters,
+    maxRound: G.stats.maxRound,
+    bankrupt: G.stats.bankrupt,
+    prizeSpins: G.stats.prizeSpins,
+    cleanWords: G.stats.cleanWords,
+    figures: G.stats.figures
+  };
+  const unlocked = applyMatchResult(res);
+  S.pendingAwards = unlocked;
+  showMatchEnd({
+    emoji: won ? "👑" : "🎬",
+    title: won ? "Победа! Джекпот!" : "Матч завершён",
+    word: norm(G.word),
+    score: G.score,
+    rounds: "3+финал",
+    letters: G.stats.letters,
+    maxRound: G.stats.maxRound,
+    awards: unlocked,
+    hint: won ? "Финал взят: +" + fmt(jackpot) + " очков" : "Финал не взят, но очки за буквы — ваши",
+    btnText: unlocked.length ? "К наградам" : "В меню",
+    onNext: closeMatchOverlay
+  });
+}
+
+/* ---------- выход / профиль ---------- */
+function confirmExit() {
+  if (S.screen !== "game") { go("home"); return; }
+  if (S.mode === "solo") {
+    askConfirm("Выйти из матча?", "Текущий матч будет завершён без сохранения очков.", () => {
+      G = null;
+      go("home");
+    });
+  } else {
+    askConfirm("Выйти из комнаты?", "Вы покинете матч. Комната продолжит работу.", () => {
+      leaveRoom();
+    });
+  }
+}
+
+function editName() {
+  const mb = $("#mbName");
+  if (!mb) return;
+  $("#nameInput").value = P.name === "Гость" ? "" : P.name;
+  mb.hidden = false;
+  setTimeout(() => { try { $("#nameInput").focus(); } catch (e) {} }, 60);
+}
+
+function saveName() {
+  const name = cleanName($("#nameInput").value);
+  $("#mbName").hidden = true;
+  if (!name) return;
+  P.name = name;
+  saveProfile();
+  syncProfileCloud();
+  renderHome();
+  if (S.screen === "profile") renderProfile();
+  toast("Имя сохранено");
+}
+
+function resetProgress() {
+  askConfirm("Сбросить прогресс?", "Награды, рекорды и фигурки будут удалены без возможности восстановления.", () => {
+    const name = P.name;
+    P = defaultProfile();
+    P.name = name;
+    saveProfile();
+    syncProfileCloud();
+    renderProfile();
+    renderHome();
+    toast("Прогресс сброшен");
+  });
+}
+
+
+/* ============================================================
+   // === multiplayer ===
+   Firestore: анонимная авторизация, один документ комнаты,
+   транзакции, пишет только активный игрок.
+   ============================================================ */
+function ensureFirebase() {
+  if (authPromise) return authPromise;
+  authPromise = new Promise((resolve) => {
+    if (!window.firebase) { resolve(false); return; }
+    if (!FIREBASE_CONFIG.apiKey) { resolve(false); return; }
+    try {
+      if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      auth = firebase.auth();
+      auth.onAuthStateChanged((u) => { uid = u ? u.uid : null; });
+      auth.signInAnonymously().then((cred) => {
+        if (cred && cred.user && cred.user.uid) uid = cred.user.uid;
+        resolve(true);
+      }).catch((e) => {
+        console.warn("auth", e);
+        resolve(false);
+      });
+    } catch (e) {
+      console.warn("firebase", e);
+      resolve(false);
+    }
+  });
+  return authPromise;
+}
+
+function openLobby() {
+  Sound.click();
+  go("lobby");
+  ensureFirebase().then((ok) => {
+    if (!ok) {
+      $("#mpNote").innerHTML =
+        "<b>Мультиплеер не настроен.</b> Добавьте FIREBASE_CONFIG в начало скрипта " +
+        "(README, шаг 3). Соло-режим работает всегда.";
+    }
+  });
+}
+
+function renderLobby() {
+  if (!R) {
+    $("#lobbyHome").hidden = false;
+    $("#lobbyRoom").hidden = true;
+    return;
+  }
+  $("#lobbyHome").hidden = true;
+  $("#lobbyRoom").hidden = false;
+  $("#roomCode").textContent = (R.code || "").split("").join(" ");
+  $("#lobbyCount").textContent = (R.players || []).length;
+  $("#lobbyPlayers").innerHTML = (R.players || []).map((p) => {
+    const av = (p.name || "?").slice(0, 1).toUpperCase();
+    const host = p.uid === R.hostId ? '<div class="hl">Хост</div>' : "";
+    const me = p.uid === uid ? '<div class="hl" style="color:#a78bfa">Вы</div>' : "";
+    return '<div class="pl-row"><div class="av">' + esc(av) + '</div><div class="nm">' +
+      esc(p.name) + "</div>" + host + me + "</div>";
+  }).join("");
+  const isHost = R.hostId === uid;
+  $("#btnStart").hidden = !isHost;
+  $("#btnStart").disabled = (R.players || []).length < 2;
+  $("#lobbyHint").textContent = isHost
+    ? ((R.players || []).length < 2 ? "Нужно минимум 2 игрока. Поделитесь кодом." : "Можно начинать. Первый ход выберется случайно.")
+    : "Ожидание хоста…";
+}
+
+async function createRoom() {
+  const ok = await ensureFirebase();
+  if (!ok) { toast("Мультиплеер не настроен"); return; }
+  if (!uid) { toast("Нет подключения к Firebase"); return; }
+  Sound.click();
+  let code = randCode();
+  for (let i = 0; i < 6; i++) {
+    try {
+      const ex = await db.collection("rooms").doc(code).get();
+      if (!ex.exists) break;
+    } catch (e) { break; }
+    code = randCode();
+  }
+  currentCode = code;
+  try {
+    await db.collection("rooms").doc(code).set({
+      code: code,
+      hostId: uid,
+      status: "lobby",
+      currentRound: 0,
+      category: "",
+      word: "",
+      revealed: [],
+      usedLetters: [],
+      missedLetters: [],
+      turnUid: uid,
+      players: [playerObj()],
+      wheelResult: null,
+      phase: "lobby",
+      spinSeq: 0,
+      multiplier: 1,
+      usedWords: [],
+      prize: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    listenRoom(code);
+  } catch (e) {
+    console.warn(e);
+    toast("Не удалось создать комнату");
+  }
+}
+
+async function joinRoomByCode() {
+  const code = ($("#joinCode").value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (code.length !== 4) { toast("Введите 4 символа кода"); return; }
+  const ok = await ensureFirebase();
+  if (!ok) { toast("Мультиплеер не настроен"); return; }
+  if (!uid) { toast("Нет подключения к Firebase"); return; }
+  Sound.click();
+  try {
+    const ref = db.collection("rooms").doc(code);
+    await db.runTransaction(async (t) => {
+      const doc = await t.get(ref);
+      if (!doc.exists) throw new Error("Комната не найдена");
+      const r = doc.data();
+      if (r.status !== "lobby") throw new Error("Игра уже идёт");
+      const players = (r.players || []).map((p) => Object.assign({}, p));
+      if (players.length >= 4) throw new Error("Комната заполнена");
+      if (!players.some((p) => p.uid === uid)) players.push(playerObj());
+      t.update(ref, { players: players, updatedAt: Date.now() });
+    });
+    currentCode = code;
+    listenRoom(code);
+  } catch (e) {
+    console.warn(e);
+    toast(e && e.message ? e.message : "Не удалось войти");
+  }
+}
+
+let feedUnsub = null;
+
+function feedEvent(text) {
+  if (!db || !currentCode || !uid) return;
+  try {
+    db.collection("feed").add({
+      room: currentCode,
+      text: String(text).slice(0, 180),
+      ts: Date.now(),
+      uid: uid
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+function listenFeed(code) {
+  if (feedUnsub) { feedUnsub(); feedUnsub = null; }
+  try {
+    feedUnsub = db.collection("feed").where("room", "==", code).onSnapshot((snap) => {
+      const list = snap.docs.map((d) => d.data()).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+      const last = list[list.length - 1];
+      if (last && last.text && R) {
+        R._lastEvent = last.text;
+        const h = $("#gHost");
+        if (h && S.mode === "mp") h.textContent = last.text;
+      }
+    }, () => {});
+  } catch (e) {}
+}
+
+function listenRoom(code) {
+  if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+  listenFeed(code);
+  lastSpinSeq = 0;
+  S.spinLock = false;
+  S.mpMatchShown = false;
+  S.boardWord = "";
+  roomUnsub = db.collection("rooms").doc(code).onSnapshot((doc) => {
+    if (!doc.exists) { toast("Комната закрыта"); leaveRoom(); return; }
+    R = doc.data();
+    R._code = code;
+    onRoomUpdate();
+  }, (err) => {
+    console.warn(err);
+    toast("Ошибка соединения с комнатой");
+  });
+}
+
+function onRoomUpdate() {
+  if (!R) return;
+  if (R.status === "lobby") {
+    go("lobby");
+    return;
+  }
+  S.mode = "mp";
+  go("game");
+
+  if (R.spinSeq && R.spinSeq !== lastSpinSeq) {
+    lastSpinSeq = R.spinSeq;
+    const fresh = !R.spinAt || (Date.now() - R.spinAt < 4500);
+    if (R.wheelResult && fresh) {
+      S.spinLock = true;
+      const idx = R.wheelResult.idx;
+      const target = wheelTarget(idx);
+      animateWheel(target, 2800, () => {
+        S.spinLock = false;
+        if (R && R.wheelResult && (R.wheelResult.t === "bankrupt" || R.wheelResult.t === "skip")) {
+          toast(R.wheelResult.t === "bankrupt"
+            ? "💸 БАНКРОТ! Очки раунда сгорели."
+            : "⏭ ПРОПУСК хода.");
+        }
+        renderRoom();
+      });
+    }
+  }
+  renderRoom();
+  scheduleAutoPass();
+
+  if (R.phase === "matchEnd") {
+    mpHandleMatchEnd();
+  } else {
+    S.mpMatchShown = false;
+  }
+}
+
+function renderRoom() {
+  if (!R) return;
+  const phase = R.phase || "spin";
+  const final = phase === "finalPick" || phase === "finalGuess";
+  const my = R.turnUid === uid;
+
+  $("#gRound").textContent = final ? "ФИНАЛ" : "Раунд " + (R.currentRound || 1) + " из 3";
+  $("#gCat").textContent = R.category || "—";
+
+  if (S.boardWord !== R.word) {
+    S.boardWord = R.word || "";
+    buildBoard($("#gBoard"), R.word || "");
+  }
+  updateBoard($("#gBoard"), new Set(R.revealed || []));
+
+  $("#gPlayers").innerHTML = (R.players || []).map((p) => {
+    return '<div class="pchip ' + (p.uid === R.turnUid ? "active" : "") + '">' +
+      '<div class="pn">' + esc(p.name) + (p.uid === R.hostId ? " 👑" : "") + "</div>" +
+      '<div class="ps">' + fmt(p.score) + "</div>" +
+      '<div class="pr">+' + fmt(p.roundBank) + "</div>" +
+    "</div>";
+  }).join("");
+
+  const timerOn = R.status === "playing" &&
+    ["spin", "letter", "choose", "guess", "finalPick", "finalGuess"].indexOf(phase) !== -1;
+  $("#gTimerWrap").hidden = !timerOn;
+
+  $("#btnSpin").hidden = !(phase === "spin" && my && !S.spinLock);
+  $("#gSpinWait").hidden = !(phase === "spin" && (!my || S.spinLock));
+  $("#gSpinWait").textContent = S.spinLock ? "Барабан крутится…" : "Ход: " + turnName(R);
+  $("#gChoose").hidden = !(phase === "choose" && !S.spinLock);
+  $("#btnReopen").hidden = phase !== "guess";
+  $("#gKbd").hidden = !((phase === "letter" || phase === "finalPick") && !S.spinLock);
+  $("#scr-game").classList.toggle("kbd-open", (phase === "letter" || phase === "finalPick") && !S.spinLock);
+  $("#wheelWrap").hidden = final;
+  $("#gSide").hidden = final;
+  $("#gFinalStage").hidden = !final;
+  if (final) {
+    $("#fsValue").textContent = fmt(lettersOf(R.word || "").length * 250);
+    $("#fsHint").textContent = phase === "finalGuess" ? "Назовите слово целиком!" : "Выберите 3 согласные и 1 гласную";
+  }
+  $("#gFinalPanel").hidden = !final;
+
+  const tn = esc(turnName(R));
+  const hints = {
+    spin: my ? "Ваш ход — крутите барабан!" : "Ход: " + tn,
+    letter: my ? "Назовите букву · сектор ×" + (R.multiplier || 1) : tn + " называет букву…",
+    choose: my ? "Буква есть! Что дальше?" : tn + " решает…",
+    guess: my ? "Откройте слово целиком" : tn + " пытается открыть слово…",
+    roundEnd: "Раунд завершён",
+    finalPick: my ? "Финал: 3 согласные и 1 гласная" : "Финал: " + tn + " выбирает буквы…",
+    finalGuess: my ? "Назовите слово целиком!" : tn + " называет слово…",
+    matchEnd: "Матч завершён"
+  };
+  $("#gHint").innerHTML = hints[phase] || "";
+  const hostTexts = {
+    spin: "Крутите барабан!",
+    letter: "Назовите букву.",
+    choose: "Буква есть! Что дальше?",
+    guess: "Открываем слово…",
+    roundEnd: "Раунд завершён.",
+    finalPick: "Финал! Три согласные и одна гласная.",
+    finalGuess: "Назовите слово целиком!",
+    matchEnd: "Матч завершён."
+  };
+  $("#gHost").textContent = R._lastEvent || hostTexts[phase] || "Играем!";
+
+  if (final) {
+    const f = R.final || { consonants: [], vowels: [], mistakes: 0 };
+    $("#fpCons").innerHTML = "Согласные <b>" + (f.consonants || []).length + "/3</b>";
+    $("#fpVow").innerHTML = "Гласные <b>" + (f.vowels || []).length + "/1</b>";
+    $("#fpErr").className = "fp-item" + ((f.mistakes || 0) > 0 ? " danger" : "");
+    $("#fpErr").innerHTML = "Ошибки <b>" + (f.mistakes || 0) + "/3</b>";
+  }
+
+  if ((phase === "guess" || phase === "finalGuess") && my && $("#mbGuess").hidden && !S.guessShown) {
+    S.guessShown = true;
+    openGuessModal({ cancel: phase === "guess" });
+  }
+  if (phase !== "guess" && phase !== "finalGuess") S.guessShown = false;
+
+  if (phase === "letter" || phase === "finalPick") {
+    updateKbd({
+      used: new Set(R.usedLetters || []),
+      hits: new Set(R.revealed || []),
+      misses: new Set(R.missedLetters || []),
+      disabled: !my,
+      allowed: phase === "finalPick" ? mpFinalAllowed : null
+    });
+  }
+
+  if (phase === "roundEnd") {
+    if ($("#ovRound").hidden) showRoundEndMP();
+  } else if (!$("#ovRound").hidden) {
+    $("#ovRound").hidden = true;
+  }
+}
+
+function showRoundEndMP() {
+  if (!R) return;
+  const winner = (R.players || []).find((p) => p.uid === R.roundWinnerUid);
+  const isHost = R.hostId === uid;
+  const isLast = (R.currentRound || 1) >= 3;
+  showRoundEnd({
+    emoji: "🎉",
+    title: "Раунд " + (R.currentRound || 1),
+    category: R.category,
+    word: norm(R.word),
+    points: R.roundPoints || 0,
+    winner: winner ? "Победитель — " + winner.name + "!" : "Раунд завершён",
+    btnText: isLast ? "Финал" : "Следующий раунд",
+    hideBtn: !isHost,
+    hint: isHost ? "Только хост запускает следующий раунд" : "Ожидание хоста…",
+    onNext: mpNextRound,
+    onExit: leaveRoom
+  });
+}
+
+/* ---------- ход: круть ---------- */
+async function mpSpin() {
+  if (S.mode !== "mp" || !R) return;
+  if (R.status !== "playing" || R.phase !== "spin" || R.turnUid !== uid) return;
+  if (S.spinLock) return;
+  Sound.click();
+  S.spinLock = true;
+  renderRoom();
+
+  const idx = pickSectorIndex();
+  const sector = SECTORS[idx];
+  const prize = sector.t === "prize" ? mpDrawPrize() : null;
+  let wrote = false;
+
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "spin" || r.turnUid !== uid) return;
+      const players = r.players.map((p) => Object.assign({}, p));
+      const i = players.findIndex((p) => p.uid === uid);
+      const patch = {
+        wheelResult: { idx: idx, t: sector.t, v: sector.v || 0, at: Date.now() },
+        spinSeq: (r.spinSeq || 0) + 1,
+        spinAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      if (sector.t === "pts") {
+        patch.phase = "letter";
+        patch.multiplier = sector.v;
+        patch.turnStartedAt = Date.now();
+      } else if (sector.t === "prize") {
+        patch.prize = prize;
+        if (prize.type === "points") {
+          players[i].score += prize.value;
+          players[i].roundBank += prize.value;
+          players[i].bestRound = Math.max(players[i].bestRound || 0, players[i].roundBank);
+        }
+        players[i].prizes = (players[i].prizes || 0) + 1;
+        patch.players = players;
+        patch.phase = "letter";
+        patch.multiplier = 1;
+        patch.turnStartedAt = Date.now();
+      } else if (sector.t === "bankrupt") {
+        players[i].score -= players[i].roundBank;
+        players[i].roundBank = 0;
+        players[i].hadBankrupt = true;
+        patch.players = players;
+        patch.turnUid = players[(i + 1) % players.length].uid;
+        patch.phase = "spin";
+        patch.turnStartedAt = Date.now();
+      } else {
+        patch.turnUid = players[(i + 1) % players.length].uid;
+        patch.phase = "spin";
+        patch.turnStartedAt = Date.now();
+      }
+      wrote = true;
+      t.update(ref, patch);
+    });
+  } catch (e) {
+    console.warn(e);
+    toast("Ошибка хода");
+  }
+  if (!wrote) {
+    S.spinLock = false;
+    renderRoom();
+    return;
+  }
+  feedEvent(sector.t === "pts" ? "Барабан: ×" + sector.v + " — " + P.name + " называет букву"
+    : sector.t === "prize" ? "Сектор ПРИЗ! " + P.name + " открывает конверт"
+    : sector.t === "bankrupt" ? "БАНКРОТ! " + P.name + " теряет очки раунда"
+    : "ПРОПУСК хода — " + P.name);
+  if (prize) {
+    if (prize.type === "figure") {
+      if (P.figures.indexOf(prize.figureId) === -1) {
+        P.figures.push(prize.figureId);
+        saveProfile();
+        syncProfileCloud();
+      }
+    }
+    setTimeout(() => {
+      if (S.mode === "mp" && R && R.turnUid === uid) {
+        showPrize({ icon: prize.icon, title: prize.title, text: prize.text }, () => renderRoom());
+      }
+    }, 2900);
+  }
+}
+
+function mpDrawPrize() {
+  const r = Math.random();
+  if (r < 0.2) {
+    const avail = FIGURES.filter((f) => P.figures.indexOf(f.id) === -1);
+    if (avail.length) {
+      const f = pick(avail);
+      return { type: "figure", figureId: f.id, icon: f.icon, title: f.name, text: "Фигурка отправляется в ваш шкаф наград!" };
+    }
+  }
+  const v = pick([100, 200, 250, 300, 500]);
+  return { type: "points", value: v, icon: "💰", title: "+" + v + " очков", text: "Приз зачислен в раунд" };
+}
+
+/* ---------- ход: буква ---------- */
+async function mpLetter(l) {
+  if (!R || R.status !== "playing" || R.phase !== "letter" || R.turnUid !== uid) return;
+  if (S.spinLock) return;
+  if ((R.usedLetters || []).indexOf(l) !== -1) return;
+  Sound.key();
+  const hitCount = countLetter(R.word, l);
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "letter" || r.turnUid !== uid) return;
+      if ((r.usedLetters || []).indexOf(l) !== -1) return;
+      const players = r.players.map((p) => Object.assign({}, p));
+      const i = players.findIndex((p) => p.uid === uid);
+      const count = countLetter(r.word, l);
+      const patch = { usedLetters: (r.usedLetters || []).concat(l), updatedAt: Date.now() };
+      if (count > 0) {
+        const rev = (r.revealed || []).slice();
+        if (rev.indexOf(l) === -1) rev.push(l);
+        patch.revealed = rev;
+        const gain = (r.multiplier || 1) * count * 10;
+        players[i].score += gain;
+        players[i].roundBank += gain;
+        players[i].letters = (players[i].letters || 0) + count;
+        players[i].bestRound = Math.max(players[i].bestRound || 0, players[i].roundBank);
+        patch.players = players;
+        if (wordComplete(r.word, new Set(rev))) {
+          const bonus = 300;
+          players[i].score += bonus;
+          players[i].roundBank += bonus;
+          if ((r.missedLetters || []).length === 0) {
+            players[i].cleanWords = (players[i].cleanWords || 0) + 1;
+          }
+          patch.players = players;
+          patch.phase = "roundEnd";
+          patch.roundWinnerUid = uid;
+          patch.roundPoints = players[i].roundBank;
+        } else {
+          patch.phase = "choose";
+        }
+      } else {
+        patch.missedLetters = (r.missedLetters || []).concat(l);
+        patch.players = players;
+        patch.turnUid = players[(i + 1) % players.length].uid;
+        patch.phase = "spin";
+        patch.turnStartedAt = Date.now();
+      }
+      t.update(ref, patch);
+    });
+    feedEvent(hitCount > 0
+      ? P.name + " открыл " + hitCount + " " + (hitCount === 1 ? "букву" : "буквы") + " «" + l + "»"
+      : P.name + ": буквы «" + l + "» нет");
+  } catch (e) {
+    console.warn(e);
+    toast("Ошибка хода");
+  }
+}
+
+async function mpContinue() {
+  if (!R || R.status !== "playing" || R.phase !== "choose" || R.turnUid !== uid) return;
+  if (S.spinLock) return;
+  Sound.click();
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "choose" || r.turnUid !== uid) return;
+      t.update(ref, { phase: "spin", turnStartedAt: Date.now(), updatedAt: Date.now() });
+    });
+  } catch (e) { console.warn(e); }
+}
+
+function mpOpenGuess() {
+  if (!R) return;
+  if (R.phase === "choose" && R.turnUid === uid) {
+    db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "choose" || r.turnUid !== uid) return;
+      t.update(ref, { phase: "guess", updatedAt: Date.now() });
+    }).catch(() => {});
+  } else if (R.phase === "guess" && R.turnUid === uid) {
+    openGuessModal({ cancel: true });
+  }
+}
+
+async function mpGuess(v) {
+  if (!R || R.status !== "playing" || R.phase !== "guess" || R.turnUid !== uid) return;
+  feedEvent(P.name + " пытается открыть слово…");
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "guess" || r.turnUid !== uid) return;
+      const players = r.players.map((p) => Object.assign({}, p));
+      const i = players.findIndex((p) => p.uid === uid);
+      if (v === normWord(r.word)) {
+        const bonus = 300;
+        players[i].score += bonus;
+        players[i].roundBank += bonus;
+        if ((r.missedLetters || []).length === 0) {
+          players[i].cleanWords = (players[i].cleanWords || 0) + 1;
+        }
+        feedEvent(P.name + " угадал слово!");
+        t.update(ref, {
+          revealed: uniqueLetters(r.word),
+          phase: "roundEnd",
+          roundWinnerUid: uid,
+          roundPoints: players[i].roundBank,
+          players: players,
+          updatedAt: Date.now()
+        });
+      } else {
+        t.update(ref, {
+          phase: "spin",
+          turnUid: players[(i + 1) % players.length].uid,
+          turnStartedAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+    });
+  } catch (e) {
+    console.warn(e);
+    toast("Ошибка хода");
+  }
+}
+
+async function mpCancelGuess() {
+  if (!R || R.phase !== "guess" || R.turnUid !== uid) return;
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "guess" || r.turnUid !== uid) return;
+      t.update(ref, { phase: "choose", updatedAt: Date.now() });
+    });
+  } catch (e) {}
+}
+
+/* ---------- финал ---------- */
+function mpFinalAllowed(l) {
+  if (!R || !R.final) return false;
+  const f = R.final;
+  if (isVowel(l)) return (f.vowels || []).length < 1;
+  return (f.consonants || []).length < 3;
+}
+
+async function mpFinalPick(l) {
+  if (!R || R.status !== "playing" || R.phase !== "finalPick" || R.turnUid !== uid) return;
+  if (S.spinLock) return;
+  if ((R.usedLetters || []).indexOf(l) !== -1) return;
+  const v = isVowel(l);
+  if (v && (R.final.vowels || []).length >= 1) return;
+  if (!v && (R.final.consonants || []).length >= 3) return;
+  Sound.key();
+  const hitCount = countLetter(R.word, l);
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "finalPick" || r.turnUid !== uid) return;
+      if ((r.usedLetters || []).indexOf(l) !== -1) return;
+      const f = r.final || { consonants: [], vowels: [], mistakes: 0, points: 0 };
+      const players = r.players.map((p) => Object.assign({}, p));
+      const i = players.findIndex((p) => p.uid === uid);
+      const f2 = {
+        consonants: (f.consonants || []).slice(),
+        vowels: (f.vowels || []).slice(),
+        mistakes: f.mistakes || 0,
+        points: f.points || 0
+      };
+      const count = countLetter(r.word, l);
+      const patch = { usedLetters: (r.usedLetters || []).concat(l), updatedAt: Date.now() };
+      if (count > 0) {
+        const rev = (r.revealed || []).slice();
+        if (rev.indexOf(l) === -1) rev.push(l);
+        patch.revealed = rev;
+        const gain = 100 * count;
+        players[i].score += gain;
+        players[i].roundBank += gain;
+        players[i].letters = (players[i].letters || 0) + count;
+        players[i].bestRound = Math.max(players[i].bestRound || 0, players[i].roundBank);
+        f2.points += gain;
+        patch.players = players;
+      } else {
+        f2.mistakes += 1;
+        patch.missedLetters = (r.missedLetters || []).concat(l);
+      }
+      if (v) f2.vowels.push(l);
+      else f2.consonants.push(l);
+      patch.final = f2;
+      if (f2.mistakes >= 3) {
+        patch.phase = "matchEnd";
+        patch.winnerUid = players.slice().sort((a, b) => b.score - a.score)[0].uid;
+      } else if (f2.consonants.length >= 3 && f2.vowels.length >= 1) {
+        patch.phase = "finalGuess";
+      }
+      t.update(ref, patch);
+    });
+    feedEvent(hitCount > 0
+      ? "Финал: буква «" + l + "» есть! +" + (hitCount * 100)
+      : "Финал: буквы «" + l + "» нет (" + ((R.final && R.final.mistakes) || 0) + "/3)");
+  } catch (e) {
+    console.warn(e);
+    toast("Ошибка хода");
+  }
+}
+
+async function mpFinalGuess(v) {
+  if (!R || R.status !== "playing" || R.phase !== "finalGuess" || R.turnUid !== uid) return;
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "finalGuess" || r.turnUid !== uid) return;
+      const players = r.players.map((p) => Object.assign({}, p));
+      const i = players.findIndex((p) => p.uid === uid);
+      const ok = v === normWord(r.word);
+      feedEvent(ok ? "ДЖЕКПОТ! " + P.name + " угадывает финальное слово!" : P.name + " не угадал финал");
+      if (ok) {
+        const jackpot = lettersOf(r.word).length * 50 * 5;
+        players[i].score += jackpot;
+        players[i].bestRound = Math.max(players[i].bestRound || 0, players[i].roundBank + jackpot);
+      }
+      t.update(ref, {
+        phase: "matchEnd",
+        players: players,
+        winnerUid: players.slice().sort((a, b) => b.score - a.score)[0].uid,
+        finalWon: ok,
+        updatedAt: Date.now()
+      });
+    });
+  } catch (e) {
+    console.warn(e);
+    toast("Ошибка хода");
+  }
+}
+
+async function mpNextRound() {
+  if (!R || R.hostId !== uid || R.phase !== "roundEnd") return;
+  Sound.click();
+  const nextRound = (R.currentRound || 1) + 1;
+  const pw = nextRound > 3 ? pickWord(6, 10, R.usedWords || []) : pickWord(4, 12, R.usedWords || []);
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.phase !== "roundEnd" || r.hostId !== uid) return;
+      if (nextRound > 3) {
+        const leader = r.players.slice().sort((a, b) => b.score - a.score)[0];
+        t.update(ref, {
+          currentRound: 4,
+          phase: "finalPick",
+          turnUid: leader.uid,
+          category: pw.category,
+          word: pw.word,
+          revealed: [],
+          usedLetters: [],
+          missedLetters: [],
+          multiplier: 1,
+          wheelResult: null,
+          final: { consonants: [], vowels: [], mistakes: 0, points: 0 },
+          usedWords: (r.usedWords || []).concat(pw.word),
+          turnStartedAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      } else {
+        const players = r.players.map((p) => Object.assign({}, p, { roundBank: 0 }));
+        t.update(ref, {
+          currentRound: nextRound,
+          phase: "spin",
+          turnUid: players[Math.floor(Math.random() * players.length)].uid,
+          category: pw.category,
+          word: pw.word,
+          revealed: [],
+          usedLetters: [],
+          missedLetters: [],
+          multiplier: 1,
+          wheelResult: null,
+          players: players,
+          usedWords: (r.usedWords || []).concat(pw.word),
+          roundWinnerUid: null,
+          roundPoints: 0,
+          turnStartedAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+    });
+    $("#ovRound").hidden = true;
+    feedEvent(nextRound > 3 ? "ФИНАЛ! Категория: " + pw.category : "Раунд " + nextRound + " — " + pw.category);
+  } catch (e) {
+    console.warn(e);
+    toast("Не удалось начать раунд");
+  }
+}
+
+/* ---------- таймер и автопередача хода ---------- */
+function startTimerLoop() {
+  if (S.timerInt) return;
+  S.timerInt = setInterval(() => {
+    if (!R || R.status !== "playing") return;
+    const left = 20000 - (Date.now() - (R.turnStartedAt || Date.now()));
+    const bar = $("#gTimerBar");
+    if (bar) bar.style.width = clamp(left / 200, 0, 100) + "%";
+    const wrap = $("#gTimerWrap");
+    if (wrap) wrap.classList.toggle("danger", left < 5000);
+  }, 200);
+}
+
+function scheduleAutoPass() {
+  clearTimeout(autoPassTimer);
+  if (!R || R.status !== "playing" || R.turnUid !== uid) return;
+  if (["spin", "letter", "choose", "guess", "finalPick", "finalGuess"].indexOf(R.phase) === -1) return;
+  const left = 20000 - (Date.now() - (R.turnStartedAt || Date.now()));
+  autoPassTimer = setTimeout(mpAutoPass, Math.max(0, Math.min(20000, left)));
+}
+
+async function mpAutoPass() {
+  if (!R || R.status !== "playing" || R.turnUid !== uid) return;
+  const phase = R.phase;
+  if (["spin", "letter", "choose", "guess", "finalPick", "finalGuess"].indexOf(phase) === -1) return;
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "playing" || r.turnUid !== uid) return;
+      if (["spin", "letter", "choose", "guess", "finalPick", "finalGuess"].indexOf(r.phase) === -1) return;
+      const players = r.players.map((p) => Object.assign({}, p));
+      const i = players.findIndex((p) => p.uid === uid);
+      if (r.phase === "finalPick" || r.phase === "finalGuess") {
+        t.update(ref, {
+          phase: "matchEnd",
+          winnerUid: players.slice().sort((a, b) => b.score - a.score)[0].uid,
+          finalWon: false,
+          updatedAt: Date.now()
+        });
+        return;
+      }
+      t.update(ref, {
+        turnUid: players[(i + 1) % players.length].uid,
+        phase: "spin",
+        turnStartedAt: Date.now(),
+        updatedAt: Date.now()
+      });
+    });
+    toast("Время вышло — ход переходит");
+  } catch (e) { console.warn(e); }
+}
+
+/* ---------- старт и выход ---------- */
+async function startGame() {
+  if (!R || R.hostId !== uid || R.status !== "lobby") return;
+  if ((R.players || []).length < 2) { toast("Нужно минимум 2 игрока"); return; }
+  Sound.click();
+  const pw = pickWord(4, 12, []);
+  try {
+    await db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(currentCode);
+      const doc = await t.get(ref);
+      const r = doc.data();
+      if (r.status !== "lobby" || r.hostId !== uid) return;
+      const players = r.players.map((p) => ({
+        uid: p.uid, name: p.name, score: 0, roundBank: 0,
+        letters: 0, bestRound: 0, hadBankrupt: false, prizes: 0
+      }));
+      t.update(ref, {
+        status: "playing",
+        currentRound: 1,
+        category: pw.category,
+        word: pw.word,
+        revealed: [],
+        usedLetters: [],
+        missedLetters: [],
+        turnUid: players[Math.floor(Math.random() * players.length)].uid,
+        players: players,
+        phase: "spin",
+        multiplier: 1,
+        wheelResult: null,
+        spinSeq: 0,
+        usedWords: [pw.word],
+        turnStartedAt: Date.now(),
+        updatedAt: Date.now()
+      });
+    });
+  } catch (e) {
+    console.warn(e);
+    toast("Не удалось начать игру");
+  }
+}
+
+function leaveRoom() {
+  const wasHost = R && R.hostId === uid;
+  const wasLobby = R && R.status === "lobby";
+  const code = currentCode;
+  if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+  if (feedUnsub) { feedUnsub(); feedUnsub = null; }
+  clearTimeout(autoPassTimer);
+  R = null;
+  currentCode = null;
+  S.spinLock = false;
+  S.mpMatchShown = false;
+  S.mode = "solo";
+  S.boardWord = "";
+  lastSpinSeq = 0;
+  $("#ovRound").hidden = true;
+  $("#ovMatch").hidden = true;
+  go("home");
+  if (wasLobby && code && db && uid) {
+    db.runTransaction(async (t) => {
+      const ref = db.collection("rooms").doc(code);
+      const doc = await t.get(ref);
+      if (!doc.exists) return;
+      const r = doc.data();
+      if (r.status !== "lobby") return;
+      const players = (r.players || []).filter((p) => p.uid !== uid);
+      t.update(ref, {
+        players: players,
+        hostId: players.length ? players[0].uid : "",
+        status: players.length ? "lobby" : "finished",
+        updatedAt: Date.now()
+      });
+    }).catch(() => {});
+  }
+}
+
+function leaveLobby() {
+  if (R) leaveRoom();
+  else go("home");
+}
+
+function copyCode() {
+  const code = (currentCode || "").replace(/\s/g, "");
+  if (!code) return;
+  const txt = "Комната «Поле Чудес»: " + code;
+  const done = () => toast("Код скопирован: " + code);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(() => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        done();
+      } catch (e) { toast(code); }
+    });
+  } else {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = txt;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      done();
+    } catch (e) { toast(code); }
+  }
+}
+
+/* ---------- итог матча ---------- */
+function mpHandleMatchEnd() {
+  if (!R || R.phase !== "matchEnd") return;
+  if (!$("#ovMatch").hidden) return;
+  const key = LS.counted + currentCode + "_" + uid;
+  if (!S.mpMatchShown) {
+    S.mpMatchShown = true;
+    S.mpUnlocked = [];
+    let counted = false;
+    try { counted = !!localStorage.getItem(key); } catch (e) {}
+    if (!counted) {
+      try { localStorage.setItem(key, "1"); } catch (e) {}
+      const me = (R.players || []).find((p) => p.uid === uid) || {};
+      const won = R.winnerUid === uid;
+      const res = {
+        won: won,
+        score: me.score || 0,
+        category: R.category,
+        letters: me.letters || 0,
+        maxRound: me.bestRound || 0,
+        bankrupt: !!me.hadBankrupt,
+        prizeSpins: me.prizes || 0,
+        cleanWords: me.cleanWords || 0
+      };
+      const unlocked = applyMatchResult(res);
+      S.mpUnlocked = unlocked;
+      S.pendingAwards = unlocked;
+    }
+  }
+  const me = (R.players || []).find((p) => p.uid === uid) || {};
+  const winner = (R.players || []).find((p) => p.uid === R.winnerUid);
+  showMatchEnd({
+    emoji: R.winnerUid === uid ? "👑" : "🎬",
+    title: R.winnerUid === uid ? "Победа!" : "Победитель — " + (winner ? winner.name : "—"),
+    word: norm(R.word),
+    score: me.score || 0,
+    rounds: "3+финал",
+    letters: me.letters || 0,
+    maxRound: me.bestRound || 0,
+    awards: S.mpUnlocked || [],
+    hint: R.finalWon ? "Финал взят — джекпот!" : "",
+    btnText: "В меню",
+    onNext: mpFinish
+  });
+}
+
+function mpFinish() {
+  const pend = (S.pendingAwards || []).slice();
+  S.pendingAwards = [];
+  if (pend.length) {
+    showAwardQueue(pend, () => {
+      leaveRoom();
+      renderHome();
+      go("awards");
+    });
+  } else {
+    leaveRoom();
+  }
+}
+
+
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+function onKey(l) {
+  if (S.mode === "solo") {
+    if (G && G.phase === "letter") soloLetter(l);
+    else if (G && G.phase === "finalPick") finalPick(l);
+  } else {
+    if (!R) return;
+    if (R.phase === "letter") mpLetter(l);
+    else if (R.phase === "finalPick") mpFinalPick(l);
+  }
+}
+
+function updateTgBack() {
+  if (!TG || !TG.BackButton) return;
+  try {
+    if (S.screen === "home") TG.BackButton.hide();
+    else TG.BackButton.show();
+  } catch (e) {}
+}
+
+function init() {
+  loadProfile();
+  try { S.sound = localStorage.getItem(LS.sound) !== "0"; } catch (e) {}
+  Sound.on = S.sound;
+
+  buildKbd();
+  drawWheel();
+  renderHome();
+  updateSoundButtons();
+  startTimerLoop();
+
+  /* клавиатура */
+  const kbd = $("#gKbd");
+  if (kbd) {
+    kbd.addEventListener("click", (e) => {
+      const k = e.target.closest ? e.target.closest(".key") : null;
+      if (!k || k.disabled) return;
+      onKey(k.dataset.letter);
+    });
+  }
+
+  /* ввод слова */
+  const gi = $("#guessInput");
+  if (gi) {
+    gi.addEventListener("input", (e) => {
+      const el = e.target;
+      el.value = el.value.replace(/[^А-Яа-яЁё\- ]/g, "").toUpperCase();
+    });
+    gi.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); submitGuess(); }
+    });
+  }
+  const gc = $("#guessCancel");
+  if (gc) gc.addEventListener("click", cancelGuess);
+
+  /* имя */
+  const ni = $("#nameInput");
+  if (ni) {
+    ni.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/[^А-Яа-яЁёA-Za-z0-9 _-]/g, "").slice(0, 18);
+    });
+    ni.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); saveName(); }
+    });
+  }
+  const nc = $("#nameCancel");
+  if (nc) nc.addEventListener("click", () => { $("#mbName").hidden = true; });
+  const ns = $("#nameSave");
+  if (ns) ns.addEventListener("click", saveName);
+
+  /* подтверждения */
+  const cn = $("#confirmNo");
+  const cy = $("#confirmYes");
+  if (cn) cn.addEventListener("click", () => resolveConfirm(false));
+  if (cy) cy.addEventListener("click", () => resolveConfirm(true));
+
+  /* код комнаты */
+  const jc = $("#joinCode");
+  if (jc) {
+    jc.addEventListener("input", (e) => {
+      e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+    });
+    jc.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); joinRoomByCode(); }
+    });
+  }
+
+  /* разблокировка WebAudio первым касанием */
+  const unlock = () => {
+    Sound.init();
+    document.removeEventListener("pointerdown", unlock);
+  };
+  document.addEventListener("pointerdown", unlock);
+
+  /* Telegram BackButton */
+  if (TG && TG.BackButton) {
+    try {
+      TG.BackButton.onClick(() => {
+        if (S.screen === "game") confirmExit();
+        else if (S.screen === "lobby") leaveLobby();
+        else go("home");
+      });
+      updateTgBack();
+    } catch (e) {}
+  }
+
+  /* возврат в вкладку — перерисовать таймер */
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      if (S.mode === "mp" && R) renderRoom();
+      Sound.init();
+    }
+  });
+
+  /* Service Worker */
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+</script>
+</body>
+</html>
